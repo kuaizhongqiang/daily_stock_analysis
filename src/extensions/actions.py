@@ -33,6 +33,8 @@ def _coerce_bool(value: Any, *, field_name: str, default: bool = False) -> bool:
 def _coerce_float(value: Any, *, field_name: str, default: float) -> float:
     if value is None:
         return default
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} must be a number")
     try:
         coerced = float(value)
     except (TypeError, ValueError) as exc:

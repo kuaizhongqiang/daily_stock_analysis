@@ -366,6 +366,16 @@ class ExtensionRuntimeTestCase(unittest.TestCase):
         self.assertEqual(runtime_result.error.message, "Action context is invalid.")
         self.assertEqual(runtime_result.error.details["timeout_seconds"], -1)
 
+    def test_invalid_context_rejects_boolean_timeout_budget(self):
+        for timeout_seconds in (True, False):
+            context = {"budget": {"timeout_seconds": timeout_seconds}}
+            result = self._runtime().execute_action("test.echo", context=context)
+
+            self.assertFalse(result.ok)
+            self.assertEqual(result.error.code, "invalid_context")
+            self.assertEqual(result.error.message, "Action context is invalid.")
+            self.assertEqual(result.error.details["exception_type"], "ValueError")
+
     def test_dry_run_validates_without_invoking_handler(self):
         calls = []
         task_runner = StubTaskRunner()
