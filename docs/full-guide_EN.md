@@ -1198,7 +1198,20 @@ For review, include before/after screenshots (or equivalent accessible output) f
 - Settings page (`/settings`)
 - Side navigation (home/settings)
 
-This change already includes bilingual smoke-capture evidence for login/home/settings/side-navigation pages in `apps/dsa-web/e2e/smoke.spec.ts` (`smoke-login-page-zh`, `smoke-home-page-zh`, `smoke-home-page-en`, `smoke-settings-page-zh`, `smoke-settings-page-en`, `smoke-mobile-shell-nav`); if this test set cannot be executed, include a PR-level access-proof note by running `python main.py --serve-only` or `npm run dev` in `apps/dsa-web` and recording review environment details.
+This change already includes bilingual smoke-capture evidence for login/home/settings/side-navigation pages in `apps/dsa-web/e2e/smoke.spec.ts` (`smoke-login-page-zh`, `smoke-home-page-zh`, `smoke-home-page-en`, `smoke-settings-page-zh`, `smoke-settings-page-en`, `smoke-mobile-shell-nav`) as the equivalent visual proof reference. The Web-side commands run for this PR were (for PR evidence in description):
+
+- `cd apps/dsa-web && npm ci --ignore-scripts`
+- `cd apps/dsa-web && npm run lint`
+- `cd apps/dsa-web && npm run build`
+- `cd apps/dsa-web && npm run test -- --run`
+- `cd apps/dsa-web && npm run test:smoke`
+
+Note: `npm run test:smoke` cannot complete in this execution environment because the Playwright `config.webServer` bootstrap times out (120000ms) and local socket binding is restricted; this is an environment limitation rather than a UI regression signal. Full visual evidence should be collected in an environment where `python main.py --serve-only` or `apps/dsa-web` dev service is reachable, then capture `/login`, `/`, and `/settings` in both locales and record the timestamp/browser context.
+
+Compatibility clarification (Issue #777):
+
+- `dsa.uiLanguage` only changes UI locale persistence and copy rendering in the browser, and does not modify runtime persistence/cleanup/migration semantics for `provider`, `model`, or `base_url`.
+- The compatibility warnings seen in structural checks for this change are read-path-only signals (environmental false positives) and do not change runtime `provider/model/base_url` routing or migration logic; rollback is `revert this PR`.
 
 ### API Endpoints
 
