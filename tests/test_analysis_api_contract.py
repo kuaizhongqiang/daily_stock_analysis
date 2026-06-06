@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from tests.litellm_stub import ensure_litellm_stub
 
@@ -442,6 +442,43 @@ class AnalysisApiContractTestCase(unittest.TestCase):
             override_region="cn",
             return_structured=True,
         )
+
+    def test_run_market_review_uses_request_scoped_config_language(self) -> None:
+        from src.core.market_review import run_market_review
+
+        global_config = SimpleNamespace(report_language="zh", market_review_region="cn")
+        scoped_config = SimpleNamespace(report_language="en", market_review_region="cn")
+        notifier = MagicMock()
+        notifier.save_report_to_file.return_value = "market_review.md"
+        notifier.is_available.return_value = False
+        review_result = SimpleNamespace(
+            report="Market review body",
+            market_light_snapshot={},
+            structured_payload={
+                "kind": "market_review",
+                "language": "en",
+                "sections": [{"key": "summary", "title": "Summary", "markdown": "Market review body"}],
+            },
+        )
+        market_analyzer = MagicMock()
+        market_analyzer.run_daily_review_with_snapshot.return_value = review_result
+
+        with patch("src.core.market_review.get_config", return_value=global_config) as get_config_mock, \
+             patch("src.core.market_review.MarketAnalyzer", return_value=market_analyzer) as market_analyzer_cls, \
+             patch("src.core.market_review._persist_market_review_history") as persist:
+            result = run_market_review(
+                notifier=notifier,
+                search_service=MagicMock(),
+                send_notification=False,
+                return_structured=True,
+                config=scoped_config,
+            )
+
+        get_config_mock.assert_not_called()
+        market_analyzer_cls.assert_called_once()
+        self.assertIs(market_analyzer_cls.call_args.kwargs["config"], scoped_config)
+        self.assertEqual(result.market_review_payload["language"], "en")
+        self.assertEqual(persist.call_args.kwargs["config"].report_language, "en")
 
     def test_get_analysis_status_returns_market_review_report_from_queue(self) -> None:
         if get_analysis_status is None or analysis_endpoint_module is None:

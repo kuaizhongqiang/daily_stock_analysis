@@ -163,6 +163,7 @@ def _run_market_review_background(
             "send_notification": send_notification,
             "override_region": override_region,
             "return_structured": True,
+            "config": runtime_config,
         }
         if query_id:
             review_kwargs["query_id"] = query_id
