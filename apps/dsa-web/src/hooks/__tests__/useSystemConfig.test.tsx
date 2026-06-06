@@ -164,6 +164,9 @@ describe('useSystemConfig', () => {
         if (item.key === 'OPENAI_BASE_URL') {
           return { ...item, value: 'https://api.example.org/v1' };
         }
+        if (item.key === 'OPENAI_VISION_MODEL') {
+          return { ...item, value: 'gpt-4o-mini-vision' };
+        }
         return item;
       }),
     };
@@ -184,6 +187,7 @@ describe('useSystemConfig', () => {
     act(() => {
       result.current.setDraftValue('LITELLM_MODEL', 'qwen/qwen2.5');
       result.current.setDraftValue('OPENAI_BASE_URL', 'https://api.example.org/v1');
+      result.current.setDraftValue('OPENAI_VISION_MODEL', 'gpt-4o-mini-vision');
     });
 
     expect(result.current.hasDirty).toBe(true);
@@ -197,6 +201,7 @@ describe('useSystemConfig', () => {
       items: [
         { key: 'LITELLM_MODEL', value: 'qwen/qwen2.5' },
         { key: 'OPENAI_BASE_URL', value: 'https://api.example.org/v1' },
+        { key: 'OPENAI_VISION_MODEL', value: 'gpt-4o-mini-vision' },
       ],
     });
     expect(update).toHaveBeenCalledTimes(1);
@@ -207,9 +212,11 @@ describe('useSystemConfig', () => {
       items: [
         { key: 'LITELLM_MODEL', value: 'qwen/qwen2.5' },
         { key: 'OPENAI_BASE_URL', value: 'https://api.example.org/v1' },
+        { key: 'OPENAI_VISION_MODEL', value: 'gpt-4o-mini-vision' },
       ],
     });
     expect(result.current.serverItems.find((item) => item.key === 'OPENAI_BASE_URL')?.value).toBe('https://api.example.org/v1');
+    expect(result.current.serverItems.find((item) => item.key === 'OPENAI_VISION_MODEL')?.value).toBe('gpt-4o-mini-vision');
     expect(result.current.hasDirty).toBe(false);
     expect(result.current.dirtyCount).toBe(0);
   });
