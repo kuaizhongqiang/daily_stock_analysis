@@ -341,6 +341,54 @@ class AlphaSiftOpportunitiesApiTestCase(unittest.TestCase):
         self.assertEqual(payload["hotspots"][0]["topic"], "玻璃基板")
         discover.assert_not_called()
 
+    def test_hotspots_refresh_falls_back_to_cache_when_provider_returns_only_errors(self) -> None:
+        config = self._config(enabled=True)
+
+        class HotspotRows(list):
+            provider_used = "akshare"
+            fallback_used = False
+            source_errors = ["akshare returned no usable board rows"]
+            stale = False
+            stale_age_hours = None
+
+        rows = HotspotRows()
+        discover = MagicMock(return_value=rows)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache_path = Path(tmpdir) / "hotspots.json"
+            cache_path.write_text(
+                json.dumps({
+                    "cached_at": "2026-06-07T12:00:00Z",
+                    "payload": {
+                        "enabled": True,
+                        "provider": "akshare",
+                        "provider_used": "DsaEastMoneyHotspotProvider",
+                        "fallback_used": False,
+                        "cache_used": False,
+                        "cached_at": "2026-06-07T12:00:00Z",
+                        "source_errors": [],
+                        "hotspots": [
+                            {"topic": "MLCC", "heat_score": 91.0},
+                        ],
+                        "hotspot_count": 1,
+                    },
+                }),
+                encoding="utf-8",
+            )
+            with (
+                patch("src.services.alphasift_service.DSA_ALPHASIFT_HOTSPOT_CACHE_PATH", cache_path),
+                patch("src.services.alphasift_service._get_alphasift_status_snapshot", return_value=({}, True, {})),
+                patch("src.services.alphasift_service._import_alphasift_hotspot", return_value=SimpleNamespace(discover_hotspots=discover)),
+            ):
+                payload = self._hotspots(config=config, provider="akshare", top=12, refresh=True)
+
+        self.assertEqual(payload["cache_used"], True)
+        self.assertEqual(payload["fallback_used"], True)
+        self.assertEqual(payload["hotspot_count"], 1)
+        self.assertEqual(payload["hotspots"][0]["topic"], "MLCC")
+        self.assertIn("akshare returned no usable board rows", payload["source_errors"])
+        discover.assert_called_once()
+
     def test_hotspot_detail_returns_route_and_concept_stocks(self) -> None:
         config = self._config(enabled=True)
 

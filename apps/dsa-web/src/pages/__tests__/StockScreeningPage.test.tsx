@@ -190,6 +190,48 @@ describe('StockScreeningPage', () => {
     expect(screen.getByText('中际旭创')).toBeInTheDocument();
   });
 
+  it('loads selected hotspot detail once when switching themes', async () => {
+    getAlphaSiftStatus.mockResolvedValueOnce({
+      enabled: true,
+      available: true,
+      installSpecIsDefault: true,
+    });
+    getHotspots.mockResolvedValueOnce({
+      enabled: true,
+      provider: 'akshare',
+      providerUsed: 'akshare',
+      hotspots: [
+        {
+          topic: 'AI算力',
+          name: 'AI算力',
+          heatScore: 88,
+          stage: '加速主升',
+        },
+        {
+          topic: '机器人执行器',
+          name: '机器人执行器',
+          heatScore: 80,
+          stage: '轮动扩散',
+        },
+      ],
+      hotspotCount: 2,
+    });
+
+    render(<StockScreeningPage />);
+
+    expect(await screen.findByText('选股已开启')).toBeInTheDocument();
+    await waitFor(() => expect(getHotspotDetail).toHaveBeenCalledWith({ topic: 'AI算力', provider: 'akshare' }));
+    expect(getHotspotDetail).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /机器人执行器/ }));
+
+    await waitFor(() =>
+      expect(getHotspotDetail).toHaveBeenLastCalledWith({ topic: '机器人执行器', provider: 'akshare' }),
+    );
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    expect(getHotspotDetail).toHaveBeenCalledTimes(2);
+  });
+
   it('shows input strategy when strategy is not in preset list', async () => {
     getAlphaSiftStatus.mockResolvedValueOnce({
       enabled: true,

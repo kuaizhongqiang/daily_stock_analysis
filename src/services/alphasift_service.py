@@ -205,6 +205,17 @@ class AlphaSiftService:
         if not isinstance(items, list):
             items = []
         selected = items[:top_count]
+        source_errors = list(getattr(raw, "source_errors", []) or [])
+        if not selected and source_errors:
+            cached = _load_alphasift_hotspot_cache(provider=provider_name, top=top_count)
+            if cached is not None:
+                errors = list(cached.get("source_errors") or [])
+                errors.extend(source_errors)
+                cached["source_errors"] = errors
+                cached["fallback_used"] = True
+                cached["cache_used"] = True
+                return cached
+
         payload = {
             "enabled": True,
             "provider": provider_name,
@@ -212,7 +223,7 @@ class AlphaSiftService:
             "fallback_used": bool(getattr(raw, "fallback_used", False)),
             "cache_used": False,
             "cached_at": None,
-            "source_errors": list(getattr(raw, "source_errors", []) or []),
+            "source_errors": source_errors,
             "stale": bool(getattr(raw, "stale", False)),
             "stale_age_hours": getattr(raw, "stale_age_hours", None),
             "hotspots": selected,

@@ -370,7 +370,6 @@ const StockScreeningPage: React.FC = () => {
     if (!topic) {
       return;
     }
-    setSelectedHotspotTopic(topic);
     setLoadingHotspotDetail(true);
     setHotspotDetailError('');
     try {
@@ -382,6 +381,10 @@ const StockScreeningPage: React.FC = () => {
     } finally {
       setLoadingHotspotDetail(false);
     }
+  }, []);
+
+  const handleHotspotSelect = useCallback((topic: string) => {
+    setSelectedHotspotTopic(topic);
   }, []);
 
   useEffect(() => {
@@ -676,7 +679,7 @@ const StockScreeningPage: React.FC = () => {
                     : 'border-border/80 bg-surface/70 hover:border-orange-300/80 hover:bg-orange-500/5'
                 }`}
                 type="button"
-                onClick={() => void loadHotspotDetail(item.topic)}
+                onClick={() => handleHotspotSelect(item.topic)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
