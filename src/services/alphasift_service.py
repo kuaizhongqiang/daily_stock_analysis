@@ -1067,7 +1067,15 @@ class DsaEastMoneyHotspotProvider:
         return self._fetch_board_names(source_fs="m:90 t:2 f:!50")
 
     def stock_board_concept_cons_em(self, symbol: str = "") -> Any:
-        frame = self._fetch_ths_constituents(symbol)
+        try:
+            frame = self._fetch_ths_constituents(symbol)
+        except Exception as exc:
+            logger.warning(
+                "AlphaSift THS constituent fetch failed for %s; falling back to alternative sources: %s",
+                symbol,
+                exc,
+            )
+            frame = None
         if frame is not None and not frame.empty:
             return frame
         frame = self._fallback_constituents(symbol)

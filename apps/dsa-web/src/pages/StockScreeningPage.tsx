@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, CircleAlert, Flame, Play, PlusCircle, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import {
   alphasiftApi,
@@ -277,6 +277,7 @@ const StockScreeningPage: React.FC = () => {
   const [candidates, setCandidates] = useState<AlphaSiftCandidate[]>([]);
   const [hotspots, setHotspots] = useState<AlphaSiftHotspot[]>([]);
   const [selectedHotspotTopic, setSelectedHotspotTopic] = useState<string | null>(null);
+  const selectedHotspotTopicRef = useRef<string | null>(null);
   const [hotspotDetail, setHotspotDetail] = useState<AlphaSiftHotspotDetail | null>(null);
   const [loadingHotspotDetail, setLoadingHotspotDetail] = useState(false);
   const [hotspotDetailError, setHotspotDetailError] = useState('');
@@ -320,6 +321,23 @@ const StockScreeningPage: React.FC = () => {
     setExpandedCode(null);
   };
 
+  const loadHotspotDetail = useCallback(async (topic: string) => {
+    if (!topic) {
+      return;
+    }
+    setLoadingHotspotDetail(true);
+    setHotspotDetailError('');
+    try {
+      const detail = await alphasiftApi.getHotspotDetail({ topic, provider: 'akshare' });
+      setHotspotDetail(detail);
+    } catch (err) {
+      setHotspotDetail(null);
+      setHotspotDetailError(toApiErrorMessage(err, '热点题材详情加载失败，请稍后重试。'));
+    } finally {
+      setLoadingHotspotDetail(false);
+    }
+  }, []);
+
   const loadStrategies = useCallback(async () => {
     setLoadingStrategies(true);
     try {
@@ -346,13 +364,17 @@ const StockScreeningPage: React.FC = () => {
     try {
       const result = await alphasiftApi.getHotspots({ provider: 'akshare', top: 12, refresh });
       const nextHotspots = result.hotspots || [];
+      const currentTopic = selectedHotspotTopicRef.current;
+      const retainedTopic = Boolean(currentTopic && nextHotspots.some((item) => item.topic === currentTopic));
+      const nextTopic = retainedTopic ? currentTopic : nextHotspots[0]?.topic ?? null;
       setHotspots(nextHotspots);
-      setSelectedHotspotTopic((currentTopic) =>
-        currentTopic && nextHotspots.some((item) => item.topic === currentTopic)
-          ? currentTopic
-          : nextHotspots[0]?.topic ?? null,
-      );
-      setHotspotDetail(null);
+      setSelectedHotspotTopic(nextTopic);
+      selectedHotspotTopicRef.current = nextTopic;
+      if (retainedTopic && refresh && nextTopic) {
+        void loadHotspotDetail(nextTopic);
+      } else if (!retainedTopic) {
+        setHotspotDetail(null);
+      }
       setHotspotDetailError('');
       if (nextHotspots.length === 0) {
         const sourceError = result.sourceErrors?.[0];
@@ -364,28 +386,15 @@ const StockScreeningPage: React.FC = () => {
     } finally {
       setLoadingHotspots(false);
     }
-  }, []);
-
-  const loadHotspotDetail = useCallback(async (topic: string) => {
-    if (!topic) {
-      return;
-    }
-    setLoadingHotspotDetail(true);
-    setHotspotDetailError('');
-    try {
-      const detail = await alphasiftApi.getHotspotDetail({ topic, provider: 'akshare' });
-      setHotspotDetail(detail);
-    } catch (err) {
-      setHotspotDetail(null);
-      setHotspotDetailError(toApiErrorMessage(err, '热点题材详情加载失败，请稍后重试。'));
-    } finally {
-      setLoadingHotspotDetail(false);
-    }
-  }, []);
+  }, [loadHotspotDetail]);
 
   const handleHotspotSelect = useCallback((topic: string) => {
     setSelectedHotspotTopic(topic);
   }, []);
+
+  useEffect(() => {
+    selectedHotspotTopicRef.current = selectedHotspotTopic;
+  }, [selectedHotspotTopic]);
 
   useEffect(() => {
     if (!selectedHotspotTopic) {

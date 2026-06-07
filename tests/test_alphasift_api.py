@@ -415,6 +415,47 @@ class AlphaSiftOpportunitiesApiTestCase(unittest.TestCase):
         self.assertEqual(payload["route"][0]["title"], "盘中发酵")
         self.assertEqual(payload["stocks"][0]["name"], "戈碧迦")
 
+    def test_hotspot_detail_falls_back_when_ths_constituents_fail(self) -> None:
+        import pandas as pd
+
+        config = self._config(enabled=True)
+
+        class FakeProvider(alphasift_service.DsaEastMoneyHotspotProvider):
+            def _fetch_ths_constituents(self, topic: str) -> Any:
+                raise TimeoutError("ths timeout")
+
+            def _fallback_constituents(self, topic: str) -> Any:
+                return pd.DataFrame([{
+                    "code": "300000",
+                    "name": "中际旭创",
+                    "change_pct": None,
+                    "hot_stock_score": 60.0,
+                }])
+
+            def _fetch_eastmoney_constituents(self, topic: str, *, source: str) -> Any:
+                return pd.DataFrame()
+
+            def _find_board_change(self, topic: str) -> Dict[str, Any]:
+                return {}
+
+            def _build_hotspot_route(self, topic: str, summary: Dict[str, Any]) -> Any:
+                return [{"title": "fallback", "description": topic, "source": "test"}]
+
+            def _fetch_ths_info(self, topic: str) -> Dict[str, str]:
+                return {}
+
+        with (
+            patch("src.services.alphasift_service._get_alphasift_status_snapshot", return_value=({}, True, {})),
+            patch("src.services.alphasift_service._resolve_hotspot_provider", return_value=("akshare", FakeProvider())),
+        ):
+            payload = self._hotspot_detail(config=config, provider="akshare", topic="AI算力")
+
+        self.assertEqual(payload["enabled"], True)
+        self.assertEqual(payload["provider"], "akshare")
+        self.assertEqual(payload["topic"], "AI算力")
+        self.assertEqual(payload["stocks"][0]["name"], "中际旭创")
+        self.assertEqual(payload["route"][0]["title"], "fallback")
+
     def test_strategies_rejects_when_enabled_but_adapter_missing(self) -> None:
         config = self._config(enabled=True)
 
