@@ -48,7 +48,6 @@ def _make_config(**kwargs) -> Config:
         email_password=None,
         pushover_user_key=None,
         pushover_api_token=None,
-        pushplus_token=None,
         serverchan3_sendkey=None,
         custom_webhook_urls=[],
         discord_bot_token=None,

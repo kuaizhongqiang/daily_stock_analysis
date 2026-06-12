@@ -130,14 +130,6 @@ class NotificationDiagnosticsTestCase(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertIn("GOTIFY_URL", {item.key for item in result.errors})
 
-    def test_advanced_key_without_minimal_warns_but_is_structured(self):
-        result = run_notification_diagnostics(_config(pushplus_topic="topic-only"))
-
-        self.assertFalse(result.ok)
-        warning_keys = {item.key for item in result.warnings}
-        self.assertIn("PUSHPLUS_TOKEN", warning_keys)
-        self.assertIn("context_channels_runtime_only", {item.code for item in result.info})
-
     def test_route_unknown_channel_reports_error(self):
         result = run_notification_diagnostics(
             _config(

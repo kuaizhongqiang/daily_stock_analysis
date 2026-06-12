@@ -1306,20 +1306,6 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         ],
         "warning_codes": ["not_webhook_delivery", "restart_required"],
     },
-    "PUSHPLUS_TOKEN": {
-        "title": "PushPlus Token",
-        "description": "Token for PushPlus notifications.",
-        "category": "notification",
-        "data_type": "string",
-        "ui_control": "password",
-        "is_sensitive": True,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": None,
-        "options": [],
-        "validation": {},
-        "display_order": 40,
-    },
     "CUSTOM_WEBHOOK_URLS": {
         "title": "Custom Webhook URLs",
         "description": "Comma-separated webhook URLs for custom notifications (DingTalk, Bark, Discord, Slack, etc.).",
@@ -2040,20 +2026,6 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "options": [],
         "validation": {},
         "display_order": 47,
-    },
-    "PUSHPLUS_TOPIC": {
-        "title": "PushPlus Topic",
-        "description": "PushPlus group topic code for one-to-many push.",
-        "category": "notification",
-        "data_type": "string",
-        "ui_control": "text",
-        "is_sensitive": False,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": None,
-        "options": [],
-        "validation": {},
-        "display_order": 41,
     },
     # ------------------------------------------------------------------
     # Notification – Server酱 / misc
@@ -4164,15 +4136,6 @@ _FIELD_HELP_METADATA: Dict[str, Dict[str, Any]] = {
         "docs": _DOC_FULL_GUIDE_NOTIFICATION,
         "warning_codes": ["secret_value"],
     },
-    "PUSHPLUS_TOKEN": {
-        "help_key": "settings.notification.chat_bots",
-        "examples": [
-            "PUSHPLUS_TOKEN=your_pushplus_token",
-            "PUSHPLUS_TOPIC=your_pushplus_topic",
-        ],
-        "docs": _DOC_FULL_GUIDE_NOTIFICATION,
-        "warning_codes": ["secret_value"],
-    },
     "CUSTOM_WEBHOOK_BEARER_TOKEN": {
         "help_key": "settings.notification.CUSTOM_WEBHOOK_URLS",
         "examples": [
@@ -4319,14 +4282,6 @@ _FIELD_HELP_METADATA: Dict[str, Dict[str, Any]] = {
         ],
         "docs": _DOC_FULL_GUIDE_NOTIFICATION,
         "warning_codes": ["secret_value"],
-    },
-    "PUSHPLUS_TOPIC": {
-        "help_key": "settings.notification.chat_bots",
-        "examples": [
-            "PUSHPLUS_TOPIC=your_pushplus_topic",
-        ],
-        "docs": _DOC_FULL_GUIDE_NOTIFICATION,
-        "warning_codes": [],
     },
     "SERVERCHAN3_SENDKEY": {
         "help_key": "settings.notification.chat_bots",
@@ -4478,7 +4433,6 @@ def _infer_category(key: str) -> str:
         "PUSHOVER",
         "NTFY",
         "GOTIFY",
-        "PUSHPLUS",
         "SERVERCHAN",
         "DINGTALK",
         "DISCORD",

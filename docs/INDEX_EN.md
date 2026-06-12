@@ -83,4 +83,4 @@ This is the entry point for project documentation. The README covers the project
 | **Baostock** | Free Python SDK for historical A-share data |
 | **WeChat Work** | Tencent enterprise messaging platform with webhook notifications |
 | **Feishu** | ByteDance enterprise collaboration platform with webhook notifications |
-| **PushPlus / ServerChan** | Chinese mobile push notification services |
+| **ServerChan** | Chinese mobile push notification services |
