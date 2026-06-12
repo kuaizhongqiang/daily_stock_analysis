@@ -21,8 +21,7 @@ from src.notification_routing import (
     ROUTABLE_NOTIFICATION_CHANNELS,
     split_notification_route_channels,
 )
-from src.notification_sender.gotify_sender import resolve_gotify_message_endpoint
-from src.notification_sender.ntfy_sender import resolve_ntfy_endpoint
+from src.notification_utils import resolve_gotify_message_endpoint, resolve_ntfy_endpoint
 
 KeyTier = Literal["minimal", "advanced"]
 IssueSeverity = Literal["error", "warning", "info"]

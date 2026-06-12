@@ -143,29 +143,7 @@ CHANNEL_PROFILES: Dict[str, ChannelProfile] = {
         supports_link=True,
         notes="Custom webhook payload shape can be configured by templates.",
     ),
-    "discord": ChannelProfile(
-        channel="discord",
-        markdown="discord_markdown",
-        default_mode="full_report",
-        max_text_chars=2000,
-        supports_link=True,
-    ),
-    "slack": ChannelProfile(
-        channel="slack",
-        markdown="mrkdwn",
-        default_mode="full_report",
-        max_text_chars=39000,
-        supports_image=True,
-        supports_file=True,
-        supports_link=True,
-        notes="Slack sections should avoid splitting markdown blocks.",
-    ),
-    "astrbot": ChannelProfile(
-        channel="astrbot",
-        markdown="plain_text",
-        default_mode="plain_fallback",
-        supports_link=True,
-    ),
+
     "unknown": ChannelProfile(
         channel="unknown",
         markdown="plain_text",
@@ -200,22 +178,7 @@ CHANNEL_RENDERER_PRESETS: Dict[str, RendererPreset] = {
         image_renderer="png_poster",
         notes="Preset only; future renderer must handle Telegram escaping and UTF-16 length limits.",
     ),
-    "dingtalk": RendererPreset(
-        channel="dingtalk",
-        text_renderer="dingtalk_markdown",
-        markdown="dingtalk_markdown",
-        rich_renderer="dingtalk_action_card",
-        image_renderer="png_poster",
-        notes="Preset only; DingTalk is not an active NotificationChannel in this runtime yet.",
-    ),
-    "slack": RendererPreset(
-        channel="slack",
-        text_renderer="slack_mrkdwn",
-        markdown="mrkdwn",
-        rich_renderer="slack_blocks",
-        image_renderer="png_poster",
-        notes="Preset only; current runtime keeps the legacy report text fallback.",
-    ),
+
 }
 
 

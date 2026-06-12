@@ -73,9 +73,6 @@ from src.core.trading_calendar import (
     is_market_open,
 )
 from data_provider.us_index_mapping import is_us_stock_code
-from bot.models import BotMessage
-
-
 logger = logging.getLogger(__name__)
 
 # 防御性 guard：当实例绕过 __init__（如测试中 __new__）构造时，
@@ -97,7 +94,7 @@ class StockAnalysisPipeline:
         self,
         config: Optional[Config] = None,
         max_workers: Optional[int] = None,
-        source_message: Optional[BotMessage] = None,
+        source_message: Optional[Any] = None,
         query_id: Optional[str] = None,
         trace_id: Optional[str] = None,
         query_source: Optional[str] = None,

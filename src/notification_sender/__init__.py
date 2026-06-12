@@ -1,21 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-通知发送层模块
+通知发送层模块（已精简）
 ===================================
 
-提供各种通知发送服务
+渠道发送器已移除，只保留核心模块结构。
+报告渲染由 src/services/report_renderer 负责。
 """
 
-from .astrbot_sender import AstrbotSender
-from .custom_webhook_sender import CustomWebhookSender
-from .discord_sender import DiscordSender
-from .email_sender import EmailSender
-from .feishu_sender import FeishuSender
-from .gotify_sender import GotifySender, resolve_gotify_message_endpoint
-from .ntfy_sender import NtfySender, resolve_ntfy_endpoint
-from .pushover_sender import PushoverSender
-from .serverchan3_sender import Serverchan3Sender
-from .slack_sender import SlackSender
-from .telegram_sender import TelegramSender
-from .wechat_sender import WechatSender, WECHAT_IMAGE_MAX_BYTES
+# All channel-specific senders have been removed.
+# Notification sending now uses src.services.report_renderer directly.

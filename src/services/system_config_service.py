@@ -51,8 +51,7 @@ from src.notification_contracts import (
     is_feishu_static_env_configured,
 )
 from src.notification_noise import validate_notification_timezone
-from src.notification_sender.gotify_sender import resolve_gotify_message_endpoint
-from src.notification_sender.ntfy_sender import resolve_ntfy_endpoint
+from src.notification_utils import resolve_gotify_message_endpoint, resolve_ntfy_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -2150,84 +2149,14 @@ class SystemConfigService:
         content: str,
         timeout_seconds: float,
     ) -> Dict[str, Any]:
-        from src.notification_sender import (
-            AstrbotSender,
-            CustomWebhookSender,
-            DiscordSender,
-            EmailSender,
-            FeishuSender,
-            GotifySender,
-            NtfySender,
-            PushoverSender,
-            Serverchan3Sender,
-            SlackSender,
-            TelegramSender,
-            WechatSender,
-        )
-
-        started_at = time.perf_counter()
-        target = self._resolve_notification_test_target(channel, effective_map)
-        titled_content = self._build_notification_test_content(title, content)
-
-        if channel == "custom":
-            attempts = CustomWebhookSender(config).test_custom_webhooks(
-                titled_content,
-                timeout_seconds=timeout_seconds,
-            )
-            latency_ms = int((time.perf_counter() - started_at) * 1000)
-            success_count = sum(1 for attempt in attempts if bool(attempt.get("success")))
-            total_count = len(attempts)
-            success = success_count > 0
-            if success_count == total_count and total_count > 0:
-                message = f"自定义 Webhook 通知测试成功（{success_count}/{total_count}）"
-            elif success_count > 0:
-                message = f"自定义 Webhook 通知测试部分成功（{success_count}/{total_count}）"
-            else:
-                message = f"自定义 Webhook 通知测试失败（{success_count}/{total_count}）"
-            return self._build_notification_test_result(
-                success=success,
-                message=message,
-                error_code=None if success else "send_failed",
-                stage="notification_send",
-                retryable=any(bool(attempt.get("retryable")) for attempt in attempts),
-                latency_ms=latency_ms,
-                attempts=attempts,
-            )
-
-        dispatch = {
-            "wechat": lambda: WechatSender(config).send_to_wechat(titled_content, timeout_seconds=timeout_seconds),
-            "feishu": lambda: FeishuSender(config).send_to_feishu(titled_content, timeout_seconds=timeout_seconds),
-            "telegram": lambda: TelegramSender(config).send_to_telegram(titled_content, timeout_seconds=timeout_seconds),
-            "email": lambda: EmailSender(config).send_to_email(content, subject=title, timeout_seconds=timeout_seconds),
-            "pushover": lambda: PushoverSender(config).send_to_pushover(content, title=title, timeout_seconds=timeout_seconds),
-            "ntfy": lambda: NtfySender(config).send_to_ntfy(content, title=title, timeout_seconds=timeout_seconds),
-            "gotify": lambda: GotifySender(config).send_to_gotify(content, title=title, timeout_seconds=timeout_seconds),
-            "serverchan3": lambda: Serverchan3Sender(config).send_to_serverchan3(content, title=title, timeout_seconds=timeout_seconds),
-            "discord": lambda: DiscordSender(config).send_to_discord(titled_content, timeout_seconds=timeout_seconds),
-            "slack": lambda: SlackSender(config).send_to_slack(titled_content, timeout_seconds=timeout_seconds),
-            "astrbot": lambda: AstrbotSender(config).send_to_astrbot(titled_content, timeout_seconds=timeout_seconds),
-        }
-
-        ok = bool(dispatch[channel]())
-        latency_ms = int((time.perf_counter() - started_at) * 1000)
-        attempt = {
-            "channel": channel,
-            "success": ok,
-            "message": "通知测试发送成功" if ok else "通知测试发送失败",
-            "target": target,
-            "error_code": None if ok else "send_failed",
-            "stage": "notification_send",
-            "retryable": False,
-            "latency_ms": latency_ms,
-        }
+        # 通知渠道发送功能已移除
         return self._build_notification_test_result(
-            success=ok,
-            message=f"{channel} 通知测试成功" if ok else f"{channel} 通知测试失败",
-            error_code=None if ok else "send_failed",
+            success=False,
+            message="通知渠道发送功能已移除，此渠道不可用",
+            error_code="channel_disabled",
             stage="notification_send",
             retryable=False,
-            latency_ms=latency_ms,
-            attempts=[attempt],
+            latency_ms=0,
         )
 
     @staticmethod

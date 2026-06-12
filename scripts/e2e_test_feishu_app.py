@@ -114,29 +114,7 @@ if _receive_id:
     if _project_root not in sys.path:
         sys.path.insert(0, _project_root)
 
-    from src.notification_sender.feishu_sender import FeishuSender
-    from src.config import Config
-
-    config = Config()
-    config.feishu_app_id = app_id
-    config.feishu_app_secret = app_secret
-    config.feishu_chat_id = _receive_id
-    config.feishu_receive_id_type = _receive_id_type
-    config.feishu_domain = _domain
-
-    sender = FeishuSender(config)
-
-    # Interactive-card send (default FeishuSender path: card-first, text-fallback)
-    ok_card = sender.send_to_feishu(
-        "**Feishu Manual Smoke Test Message**\n\n"
-        "This is a manual smoke test from `e2e_test_feishu_app.py`\n"
-        f"(mode: {_receive_id_type})."
-    )
-    if ok_card:
-        logger.info("Live send test PASSED (via card or text fallback).")
-    else:
-        logger.error("Live send test FAILED - check FEISHU_CHAT_ID and bot permissions.")
-        sys.exit(1)
+    logger.info("通知渠道发送功能已移除，跳过飞书发送测试。")
 else:
     logger.info(
         "Neither FEISHU_CHAT_ID nor FEISHU_OPEN_ID set; skipping live send. "

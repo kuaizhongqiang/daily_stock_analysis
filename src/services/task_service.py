@@ -22,7 +22,6 @@ from typing import Optional, Dict, Any, List, Union
 
 from src.enums import ReportType
 from src.storage import get_db
-from bot.models import BotMessage
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +68,7 @@ class TaskService:
         self,
         code: str,
         report_type: Union[ReportType, str] = ReportType.SIMPLE,
-        source_message: Optional[BotMessage] = None,
+        source_message: Optional[Any] = None,
         save_context_snapshot: Optional[bool] = None,
         query_source: str = "bot"
     ) -> Dict[str, Any]:
@@ -143,7 +142,7 @@ class TaskService:
         code: str,
         task_id: str,
         report_type: ReportType = ReportType.SIMPLE,
-        source_message: Optional[BotMessage] = None,
+        source_message: Optional[Any] = None,
         save_context_snapshot: Optional[bool] = None,
         query_source: str = "bot"
     ) -> Dict[str, Any]:

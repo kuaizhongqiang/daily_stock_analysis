@@ -20,9 +20,6 @@ ROUTABLE_NOTIFICATION_CHANNELS: Tuple[str, ...] = (
     "gotify",
     "serverchan3",
     "custom",
-    "discord",
-    "slack",
-    "astrbot",
 )
 ROUTABLE_NOTIFICATION_CHANNEL_SET = frozenset(ROUTABLE_NOTIFICATION_CHANNELS)
 
