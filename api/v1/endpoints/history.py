@@ -703,3 +703,104 @@ def get_history_markdown(
         )
 
     return MarkdownReportResponse(content=markdown_content)
+
+
+# ============================================================
+# 第二阶段扩展: 会话管理 / 搜索 / 导出 / 清理
+# ============================================================
+
+
+@router.get(
+    "/sessions",
+    summary="列出分析会话",
+    description="列出最近的分析会话。",
+)
+def list_sessions(
+    days: int = Query(30, description="回溯天数"),
+    limit: int = Query(20, description="返回数量"),
+):
+    """列出最近的分析会话。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    sessions = svc.list_sessions(days=days, limit=limit)
+    return {"sessions": sessions, "count": len(sessions)}
+
+
+@router.get(
+    "/sessions/{session_id}",
+    summary="获取会话关联的分析",
+    description="获取某个分析会话关联的所有分析记录。",
+)
+def get_session_analyses(session_id: str):
+    """获取会话关联的分析记录。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    analyses = svc.get_session_analyses(session_id)
+    return {"session_id": session_id, "analyses": analyses, "count": len(analyses)}
+
+
+@router.get(
+    "/search",
+    summary="全文搜索分析历史",
+    description="按关键词全文搜索分析历史。",
+)
+def search_history(
+    query: str = Query(..., description="搜索关键词"),
+    days: int = Query(90, description="回溯天数"),
+    limit: int = Query(20, description="返回数量"),
+):
+    """全文搜索分析历史。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    results = svc.search_history(query, days=days, limit=limit)
+    return {"query": query, "results": results, "count": len(results)}
+
+
+@router.get(
+    "/export",
+    summary="导出分析历史",
+    description="导出分析历史为 JSON 或 CSV。",
+)
+def export_history(
+    fmt: str = Query("json", regex="^(json|csv)$"),
+    days: int = Query(30, description="回溯天数"),
+    code: Optional[str] = Query(None, description="股票代码过滤"),
+):
+    """导出分析历史。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    if fmt == "csv":
+        data = svc.export_analysis_csv(days=days, code=code)
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(data, media_type="text/csv")
+    data = svc.export_analysis_json(days=days, code=code)
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(data, media_type="application/json")
+
+
+@router.delete(
+    "/prune",
+    summary="清理旧分析历史",
+    description="清理指定天数之前的分析历史记录。",
+)
+def prune_history(
+    older_than_days: int = Query(90, description="保留天数"),
+    code: Optional[str] = Query(None, description="股票代码过滤"),
+):
+    """清理旧分析历史。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    count = svc.prune_analysis(older_than_days=older_than_days, code=code)
+    return {"deleted": count, "older_than_days": older_than_days}
+
+
+@router.get(
+    "/stats",
+    summary="历史统计",
+    description="获取历史数据统计信息。",
+)
+def history_stats():
+    """获取历史统计信息。"""
+    from src.services.history_retention_service import HistoryRetentionService
+    svc = HistoryRetentionService()
+    return svc.get_stats()

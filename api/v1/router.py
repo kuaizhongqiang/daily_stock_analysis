@@ -21,10 +21,12 @@ from api.v1.endpoints import (
     decision_signals,
     health,
     history,
+    pools,
     portfolio,
     stocks,
     system_config,
     usage,
+    vector_search,
 )
 
 # 创建 v1 版本主路由
@@ -85,6 +87,12 @@ router.include_router(
 )
 
 router.include_router(
+    pools.router,
+    prefix="/pools",
+    tags=["Pools"]
+)
+
+router.include_router(
     alerts.router,
     prefix="/alerts",
     tags=["Alerts"]
@@ -105,4 +113,10 @@ router.include_router(
 router.include_router(
     health.router,
     tags=["Health"]
+)
+
+router.include_router(
+    vector_search.router,
+    prefix="/search",
+    tags=["VectorSearch"]
 )

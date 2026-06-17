@@ -57,7 +57,7 @@ from src.config import get_config
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
-CURRENT_SCHEMA_VERSION = "2026-06-05-create-all-baseline"
+CURRENT_SCHEMA_VERSION = "2026-06-17-stock-pools-and-vector"
 
 # SQLAlchemy ORM 基类
 Base = declarative_base()
@@ -262,6 +262,7 @@ class AnalysisHistory(Base):
     raw_result = Column(Text)
     news_content = Column(Text)
     context_snapshot = Column(Text)
+    conversation_session_id = Column(String(100), index=True)
 
     # 狙击点位（用于回测）
     ideal_buy = Column(Float)
@@ -630,6 +631,7 @@ class ConversationMessage(Base):
     session_id = Column(String(100), index=True, nullable=False)
     role = Column(String(20), nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
+    tags = Column(String(255))
     created_at = Column(DateTime, default=datetime.now, index=True)
 
 
@@ -847,6 +849,138 @@ class DecisionSignalRecord(Base):
             'horizon',
             'market_phase',
         ),
+    )
+
+
+# ============================================================
+# 第二阶段: 数据智能增强 — 股池 / 元数据 / 数据质量 / 会话 / 向量索引
+# ============================================================
+
+
+class StockPool(Base):
+    """轻量级股池（自选股分组/跟踪列表）。"""
+    __tablename__ = 'stock_pools'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(64), nullable=False, unique=True, index=True)
+    description = Column(String(255))
+    tags = Column(String(255))  # comma-separated: "hot,tech,bluechip"
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    __table_args__ = (
+        Index('ix_stock_pool_active', 'is_active'),
+    )
+
+    def __repr__(self):
+        return f"<StockPool(id={self.id}, name={self.name})>"
+
+
+class StockPoolMember(Base):
+    """股池成员（多对多关联）。"""
+    __tablename__ = 'stock_pool_members'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pool_id = Column(Integer, ForeignKey('stock_pools.id', ondelete='CASCADE'), nullable=False, index=True)
+    code = Column(String(16), nullable=False, index=True)
+    market = Column(String(8), nullable=False, default='cn')
+    added_reason = Column(String(255))
+    added_by = Column(String(64))  # "manual" | "ai" | "import"
+    created_at = Column(DateTime, default=datetime.now)
+
+    __table_args__ = (
+        UniqueConstraint('pool_id', 'code', name='uix_pool_member'),
+        Index('ix_pool_member_code_pool', 'code', 'pool_id'),
+    )
+
+    def __repr__(self):
+        return f"<StockPoolMember(pool_id={self.pool_id}, code={self.code})>"
+
+
+class StockMetadata(Base):
+    """股票元数据 — 行业/板块/市值等。"""
+    __tablename__ = 'stock_metadata'
+
+    code = Column(String(16), primary_key=True)
+    name = Column(String(64))
+    market = Column(String(8), nullable=False, default='cn', index=True)
+    sector = Column(String(64), index=True)
+    industry = Column(String(64), index=True)
+    total_market_cap = Column(Float)
+    circulating_market_cap = Column(Float)
+    listing_date = Column(Date)
+    is_active = Column(Boolean, default=True)
+    metadata_json = Column(Text)
+    data_source = Column(String(32))
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    __table_args__ = (
+        Index('ix_stock_metadata_sector_industry', 'sector', 'industry'),
+    )
+
+    def __repr__(self):
+        return f"<StockMetadata(code={self.code}, name={self.name})>"
+
+
+class DataQualityLog(Base):
+    """数据获取质量追踪日志。"""
+    __tablename__ = 'data_quality_log'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    table_name = Column(String(64), nullable=False, index=True)
+    entity_key = Column(String(32), index=True)
+    data_source = Column(String(50), nullable=False, index=True)
+    fetch_status = Column(String(16), nullable=False)  # success / partial / failed
+    records_fetched = Column(Integer, default=0)
+    freshness_score = Column(Float)
+    reliability_score = Column(Float)
+    error_message = Column(Text)
+    latency_ms = Column(Integer)
+    created_at = Column(DateTime, default=datetime.now, index=True)
+
+    __table_args__ = (
+        Index('ix_data_quality_log_table_entity_time', 'table_name', 'entity_key', 'created_at'),
+    )
+
+
+class AnalysisSession(Base):
+    """分析运行会话 — 关联分析历史与对话。"""
+    __tablename__ = 'analysis_sessions'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(100), nullable=False, unique=True, index=True)
+    title = Column(String(200))
+    conversation_session_id = Column(String(100), index=True)
+    started_at = Column(DateTime, default=datetime.now)
+    ended_at = Column(DateTime)
+    message_count = Column(Integer, default=0)
+    token_count = Column(Integer, default=0)
+    tags = Column(String(500))
+    exported_at = Column(DateTime)
+    retention_days = Column(Integer, default=90)
+
+    __table_args__ = (
+        Index('ix_analysis_session_conversation', 'conversation_session_id'),
+    )
+
+
+class VectorIndexEntry(Base):
+    """向量索引条目元数据 — 记录哪些文档已索引。"""
+    __tablename__ = 'vector_index'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    doc_type = Column(String(32), nullable=False, index=True)
+    doc_id = Column(Integer, nullable=False)
+    source_table = Column(String(64), nullable=False)
+    content_hash = Column(String(64), index=True)
+    chunk_index = Column(Integer, default=0)
+    chunk_text = Column(Text, nullable=False)
+    indexed_at = Column(DateTime, default=datetime.now)
+
+    __table_args__ = (
+        UniqueConstraint('doc_type', 'doc_id', 'chunk_index', name='uix_vector_index_doc'),
+        Index('ix_vector_index_type', 'doc_type'),
     )
 
 

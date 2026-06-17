@@ -23,7 +23,7 @@ import sys
 
 import click
 
-from .commands import analyze, config, resolve, market, sources, strategies, history, signals, mcp
+from .commands import analyze, config, resolve, market, sources, strategies, history, signals, mcp, pool, vector
 from .output import JsonOutput, pass_json
 
 
@@ -50,6 +50,8 @@ cli.add_command(strategies.strategies)
 cli.add_command(history.history)
 cli.add_command(signals.signals)
 cli.add_command(mcp.mcp)
+cli.add_command(pool.pool)
+cli.add_command(vector.vector)
 
 
 def main():
