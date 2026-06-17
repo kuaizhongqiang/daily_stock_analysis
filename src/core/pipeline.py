@@ -1202,6 +1202,35 @@ class StockAnalysisPipeline:
                         report_saved=bool(saved_count),
                         metadata_saved=bool(saved_count),
                     )
+                    # 记录分析会话
+                    try:
+                        from sqlalchemy import select
+                        from src.storage import AnalysisSession
+                        from datetime import datetime
+                        with self.db.get_session() as sess:
+                            existing = sess.execute(
+                                select(AnalysisSession).where(AnalysisSession.session_id == query_id)
+                            ).scalar_one_or_none()
+                            if existing is None:
+                                sess.add(AnalysisSession(
+                                    session_id=query_id,
+                                    title=f"{result.name if result else stock_name} 分析",
+                                ))
+                                sess.commit()
+                    except Exception as session_err:
+                        logger.warning("[Pipeline] 记录分析会话失败 query_id=%s: %s", query_id, session_err)
+                    # 自动触发向量索引
+                    try:
+                        if result and result.analysis_summary:
+                            from src.services.vector_search_service import VectorSearchService
+                            vsvc = VectorSearchService()
+                            vsvc.index_document(
+                                "analysis", result.id or 0,
+                                result.analysis_summary,
+                                source_table="analysis_history",
+                            )
+                    except Exception as vec_err:
+                        logger.warning("[Pipeline] 向量索引失败 id=%s: %s", getattr(result, "id", "?"), vec_err)
                     latest_diagnostic_snapshot = current_diagnostic_snapshot()
                     if latest_diagnostic_snapshot is not None:
                         agent_context_snapshot["diagnostics"] = latest_diagnostic_snapshot
@@ -2234,9 +2263,26 @@ class StockAnalysisPipeline:
             
             if not success:
                 logger.warning(f"[{code}] 数据获取失败: {error}")
-                # 即使获取失败，也尝试用已有数据分析
+                # 记录数据质量
+                try:
+                    from src.services.data_quality_service import DataQualityService
+                    DataQualityService().record_fetch(
+                        "stock_daily", code, "pipeline",
+                        success=False, error_message=str(error or "unknown"),
+                    )
+                except Exception as dq_err:
+                    logger.warning("[Pipeline] 记录数据质量失败 %s: %s", code, dq_err)
             else:
                 self._emit_progress(16, f"{code}：行情数据准备完成")
+                # 记录数据质量
+                try:
+                    from src.services.data_quality_service import DataQualityService
+                    DataQualityService().record_fetch(
+                        "stock_daily", code, "pipeline",
+                        success=True,
+                    )
+                except Exception as dq_err:
+                    logger.warning("[Pipeline] 记录数据质量失败 %s: %s", code, dq_err)
             
             # Step 2: AI 分析
             if skip_analysis:

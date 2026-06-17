@@ -16,12 +16,43 @@
 
 ## 核心 API 参考
 
+### 股票分析
+
 | 接口 | 方法 | 用途 |
 |------|------|------|
 | `/api/v1/analysis/analyze` | POST | 触发分析（主入口） |
 | `/api/v1/analysis/status/{task_id}` | GET | 异步任务状态 |
 | `/api/v1/agent/chat` | POST | Agent 策略问股（需 `AGENT_MODE=true`） |
+| `/api/v1/stocks/{code}/quote` | GET | 实时行情 |
 | `/api/health` | GET | 健康检查 |
+
+### 股池管理（第二期）
+
+| 接口 | 方法 | 用途 |
+|------|------|------|
+| `/api/v1/pools` | GET | 列出股池 |
+| `/api/v1/pools` | POST | 创建股池 |
+| `/api/v1/pools/{id}` | GET | 获取股池详情 |
+| `/api/v1/pools/{id}` | DELETE | 删除股池 |
+| `/api/v1/pools/{id}/stocks` | GET | 池内股票列表 |
+| `/api/v1/pools/{id}/stocks` | POST | 添加股票到池 |
+| `/api/v1/pools/{id}/stocks` | DELETE | 从池移除股票 |
+
+### 语义搜索（第二期）
+
+| 接口 | 方法 | 用途 |
+|------|------|------|
+| `/api/v1/search/semantic?query=茅台` | GET | 语义搜索 |
+| `/api/v1/search/status` | GET | 索引状态 |
+
+### 历史管理（第二期）
+
+| 接口 | 方法 | 用途 |
+|------|------|------|
+| `/api/v1/history/search?query=茅台` | GET | 全文搜索历史 |
+| `/api/v1/history/export?fmt=json` | GET | 导出分析历史 |
+| `/api/v1/history/prune?older_than_days=90` | DELETE | 清理旧历史 |
+| `/api/v1/history/stats` | GET | 历史统计 |
 
 ### 触发分析请求体
 
