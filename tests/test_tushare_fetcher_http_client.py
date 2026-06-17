@@ -45,7 +45,7 @@ class TestTushareHttpClient(unittest.TestCase):
             df = client.daily(ts_code="600519.SH", start_date="20260320", end_date="20260325")
 
         post_mock.assert_called_once_with(
-            "http://api.tushare.pro",
+            "https://api.tushare.pro",
             json={
                 "api_name": "daily",
                 "token": "demo-token",

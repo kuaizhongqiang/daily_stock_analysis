@@ -11,7 +11,7 @@ import json
 import logging
 import sys
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,83 @@ def _try_market_status() -> Dict[str, Any]:
         return {"error": str(e)}
 
 
+def _try_market_review() -> Dict[str, Any]:
+    """Run a market review across open markets."""
+    try:
+        from src.config import get_config
+        from src.core.pipeline import StockAnalysisPipeline
+
+        config = get_config()
+        pipeline = StockAnalysisPipeline(config=config)
+        results = pipeline.run_market_review()
+        return {"status": "completed", "markets_analyzed": len(results) if results else 0}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _try_analyze_sync(stock_code: str) -> Dict[str, Any]:
+    """Run a synchronous stock analysis and return results."""
+    try:
+        from src.services.analyzer_service import analyze_stock
+        result = analyze_stock(stock_code)
+        if result is None:
+            return {"error": "Analysis returned no result"}
+        return {
+            "stock_code": result.code,
+            "stock_name": result.name or "",
+            "advice": result.operation_advice or "",
+            "score": result.sentiment_score or 0,
+            "trend": result.trend_prediction or "",
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _try_list_strategies() -> List[Dict[str, str]]:
+    """List available trading strategies."""
+    try:
+        from pathlib import Path
+        import yaml
+
+        strategies_dir = Path("strategies")
+        if not strategies_dir.exists():
+            return []
+        result = []
+        for f in sorted(strategies_dir.glob("*.yml")):
+            try:
+                data = yaml.safe_load(f.read_text(encoding="utf-8"))
+                name = data.get("name", "") or data.get("id", f.stem)
+                desc = data.get("description", "") or ""
+                result.append({"id": f.stem, "name": name, "description": desc})
+            except Exception:
+                result.append({"id": f.stem, "name": f.stem, "description": ""})
+        return result
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+def _try_stock_quote(stock_code: str) -> Dict[str, Any]:
+    """Get real-time stock quote snapshot."""
+    try:
+        from src.services.analyzer_service import get_stock_quote
+        quote = get_stock_quote(stock_code)
+        if quote is None:
+            return {"error": "Quote not available"}
+        return {
+            "stock_code": stock_code,
+            "price": quote.get("price", 0),
+            "change": quote.get("change", 0),
+            "change_pct": quote.get("change_pct", 0),
+            "volume": quote.get("volume", 0),
+            "high": quote.get("high", 0),
+            "low": quote.get("low", 0),
+            "open": quote.get("open", 0),
+            "pre_close": quote.get("pre_close", 0),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 if MCP_AVAILABLE:
     server = Server("dsa")
 
@@ -92,7 +169,7 @@ if MCP_AVAILABLE:
         return [
             types.Tool(
                 name="analyze_stock",
-                description="Submit a stock analysis job asynchronously. Returns a job_id immediately.",
+                description="Submit a stock analysis job asynchronously. Returns a job_id immediately. Use check_job_status to poll for completion.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -106,7 +183,7 @@ if MCP_AVAILABLE:
             ),
             types.Tool(
                 name="check_job_status",
-                description="Check the status and progress of an analysis job.",
+                description="Check the status and progress of an analysis job by job_id.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -120,7 +197,7 @@ if MCP_AVAILABLE:
             ),
             types.Tool(
                 name="resolve_stock",
-                description="Resolve a stock name or alias to its trading code (e.g. 茅台 → 600519).",
+                description="Resolve a stock name or alias to its trading code (e.g. 茅台 → 600519, tencent → hk00700).",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -134,10 +211,54 @@ if MCP_AVAILABLE:
             ),
             types.Tool(
                 name="market_status",
-                description="Get current market status (open markets, trading hours).",
+                description="Get current market status showing which markets (cn/hk/us) are open today.",
                 inputSchema={
                     "type": "object",
                     "properties": {},
+                },
+            ),
+            types.Tool(
+                name="run_market_review",
+                description="Run a full market review across all open markets. Takes 1-3 minutes. Returns summary of markets analyzed.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                },
+            ),
+            types.Tool(
+                name="run_analysis_sync",
+                description="Run a stock analysis synchronously and return results. Takes 1-3 minutes. Use this instead of analyze_stock+check_job_status when you can wait for results.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "stock_code": {
+                            "type": "string",
+                            "description": "Stock code (e.g. 600519, HK00700, AAPL)",
+                        }
+                    },
+                    "required": ["stock_code"],
+                },
+            ),
+            types.Tool(
+                name="list_strategies",
+                description="List all available trading strategies with their names and descriptions.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                },
+            ),
+            types.Tool(
+                name="get_stock_quote",
+                description="Get a real-time stock quote snapshot including price, change, volume, high, low.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "stock_code": {
+                            "type": "string",
+                            "description": "Stock code (e.g. 600519, HK00700, AAPL)",
+                        }
+                    },
+                    "required": ["stock_code"],
                 },
             ),
         ]
@@ -177,6 +298,28 @@ if MCP_AVAILABLE:
 
             elif name == "market_status":
                 result = _try_market_status()
+                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+
+            elif name == "run_market_review":
+                result = _try_market_review()
+                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+
+            elif name == "run_analysis_sync":
+                stock_code = arguments.get("stock_code", "")
+                if not stock_code:
+                    return [types.TextContent(type="text", text=json.dumps({"error": "stock_code required"}))]
+                result = _try_analyze_sync(stock_code)
+                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+
+            elif name == "list_strategies":
+                result = _try_list_strategies()
+                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+
+            elif name == "get_stock_quote":
+                stock_code = arguments.get("stock_code", "")
+                if not stock_code:
+                    return [types.TextContent(type="text", text=json.dumps({"error": "stock_code required"}))]
+                result = _try_stock_quote(stock_code)
                 return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
             else:
