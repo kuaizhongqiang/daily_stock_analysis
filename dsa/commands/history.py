@@ -1,6 +1,7 @@
 """dsa history — query analysis history."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import click
@@ -23,11 +24,12 @@ def list_all(json_out: JsonOutput, stock: Optional[str], days: int, limit: int, 
     """List analysis history."""
     from src.services.history_service import HistoryService
 
+    now = datetime.now(timezone.utc)
     svc = HistoryService()
     results = svc.get_history_list(
         stock_code=stock or "",
-        start_date=...,
-        end_date=...,
+        start_date=now - timedelta(days=days),
+        end_date=now,
         page=1,
         limit=limit,
     )
