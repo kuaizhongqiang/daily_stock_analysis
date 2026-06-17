@@ -65,7 +65,6 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 from data_provider.base import canonical_stock_code
-from src.webui_frontend import prepare_webui_frontend_assets
 from src.config import get_config, Config
 from src.logging_config import setup_logging
 
@@ -872,8 +871,6 @@ def main() -> int:
 
     bot_clients_started = False
     if start_serve:
-        if not prepare_webui_frontend_assets():
-            logger.warning("前端静态资源未就绪，继续启动 FastAPI 服务（Web 页面可能不可用）")
         try:
             start_api_server(host=args.host, port=args.port, config=config)
             bot_clients_started = True

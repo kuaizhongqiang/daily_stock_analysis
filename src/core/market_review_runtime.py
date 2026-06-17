@@ -46,13 +46,12 @@ def build_market_review_runtime(
     source_message: Optional[Any] = None,
 ) -> Tuple[Any, Any, Any]:
     """
-    Build shared NotificationService, GeminiAnalyzer and SearchService instances.
+    Build shared GeminiAnalyzer and SearchService instances (notification disabled).
     """
     from src.analyzer import GeminiAnalyzer
-    from src.notification import NotificationService
     from src.search_service import SearchService
 
-    notifier = NotificationService(source_message=source_message)
+    notifier = None
 
     search_service = None
     has_search_capability = getattr(config, "has_search_capability_enabled", None)

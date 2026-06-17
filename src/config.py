@@ -24,17 +24,6 @@ from src.report_language import (
     is_supported_report_language_value,
     normalize_report_language,
 )
-from src.notification_routing import parse_notification_route_channels
-from src.notification_noise import (
-    NOTIFICATION_SEVERITIES,
-    is_supported_notification_severity,
-    parse_notification_quiet_hours,
-    validate_notification_timezone,
-)
-from src.notification_contracts import (
-    is_feishu_app_bot_configured,
-    is_feishu_static_configured,
-)
 from src.llm import generation_params as llm_generation_params
 
 logger = logging.getLogger(__name__)
@@ -1591,15 +1580,9 @@ class Config:
             slack_channel_id=os.getenv('SLACK_CHANNEL_ID'),
             astrbot_url=os.getenv('ASTRBOT_URL'),
             astrbot_token=os.getenv('ASTRBOT_TOKEN'),
-            notification_report_channels=parse_notification_route_channels(
-                os.getenv('NOTIFICATION_REPORT_CHANNELS')
-            ),
-            notification_alert_channels=parse_notification_route_channels(
-                os.getenv('NOTIFICATION_ALERT_CHANNELS')
-            ),
-            notification_system_error_channels=parse_notification_route_channels(
-                os.getenv('NOTIFICATION_SYSTEM_ERROR_CHANNELS')
-            ),
+            notification_report_channels=[],
+            notification_alert_channels=[],
+            notification_system_error_channels=[],
             notification_dedup_ttl_seconds=parse_env_int(
                 os.getenv('NOTIFICATION_DEDUP_TTL_SECONDS'),
                 0,
@@ -2711,78 +2694,6 @@ class Config:
                 field="GOTIFY_TOKEN",
             ))
 
-        if self.notification_quiet_hours:
-            try:
-                parse_notification_quiet_hours(self.notification_quiet_hours)
-            except ValueError as exc:
-                issues.append(ConfigIssue(
-                    severity="error",
-                    message=f"通知静默时段配置无效：{exc}",
-                    field="NOTIFICATION_QUIET_HOURS",
-                ))
-
-        if self.notification_timezone:
-            try:
-                validate_notification_timezone(self.notification_timezone)
-            except ValueError as exc:
-                issues.append(ConfigIssue(
-                    severity="error",
-                    message=f"通知时区配置无效：{exc}",
-                    field="NOTIFICATION_TIMEZONE",
-                ))
-
-        if self.notification_min_severity and not is_supported_notification_severity(self.notification_min_severity):
-            issues.append(ConfigIssue(
-                severity="error",
-                message=(
-                    "通知最低级别配置无效，允许值："
-                    f"{', '.join(NOTIFICATION_SEVERITIES)}"
-                ),
-                field="NOTIFICATION_MIN_SEVERITY",
-            ))
-
-        if self.notification_daily_digest_enabled:
-            issues.append(ConfigIssue(
-                severity="warning",
-                message=(
-                    "NOTIFICATION_DAILY_DIGEST_ENABLED 当前为预留配置；"
-                    "P4 不会发送每日摘要或持久化摘要内容。"
-                ),
-                field="NOTIFICATION_DAILY_DIGEST_ENABLED",
-            ))
-
-        has_feishu_app_id = bool((self.feishu_app_id or "").strip())
-        has_feishu_app_secret = bool((self.feishu_app_secret or "").strip())
-        has_feishu_app_credentials_complete = has_feishu_app_id and has_feishu_app_secret
-        has_feishu_app_credentials = has_feishu_app_id or has_feishu_app_secret
-        has_feishu_doc_token = bool((self.feishu_folder_token or "").strip())
-        has_feishu_full_cloud_doc_credentials = (
-            has_feishu_app_credentials_complete
-            and has_feishu_doc_token
-        )
-        has_feishu_stream_route = bool(self.feishu_stream_enabled and has_feishu_app_credentials_complete)
-        has_feishu_app_notification_route = is_feishu_app_bot_configured(self)
-        if (
-            has_feishu_app_credentials
-            and not has_feishu_full_cloud_doc_credentials
-            and not is_feishu_static_configured(self)
-            and not has_feishu_stream_route
-            and not has_feishu_app_notification_route
-        ):
-            suggestions = []
-            if has_feishu_app_credentials_complete:
-                suggestions.append("配置 FEISHU_CHAT_ID 开启 App Bot 主动推送")
-                suggestions.append("开启 FEISHU_STREAM_ENABLED 使用应用机器人事件订阅")
-            else:
-                suggestions.append("补齐 FEISHU_APP_ID / FEISHU_APP_SECRET 后配置 FEISHU_CHAT_ID 开启 App Bot 主动推送")
-            suggestions.append("配置 FEISHU_WEBHOOK_URL 使用自定义机器人 Webhook 推送")
-            issues.append(ConfigIssue(
-                severity="warning",
-                message="仅配置 FEISHU_APP_ID / FEISHU_APP_SECRET 不会开启飞书静态通知。"
-                        + " 请选择以下方式之一："
-                        + "；".join(suggestions) + "。",
-                field="FEISHU_CHAT_ID",
-            ))
 
         # --- Deprecated field migration hints ---
         if os.getenv("OPENAI_VISION_MODEL"):

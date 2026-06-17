@@ -22,10 +22,6 @@ changelog:
     - title: "📡 Data Sources"
       labels:
         - data-source
-    - title: "🔔 Notifications"
-      labels:
-        - notification
-        - feishu
     - title: "⚙️ Configuration"
       labels:
         - configuration

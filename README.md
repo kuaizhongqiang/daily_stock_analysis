@@ -5,9 +5,9 @@
 > **Fork 说明**：本项目基于 [ZhuLinsen/daily_stock_analysis](https://github.com/ZhuLinsen/daily_stock_analysis)（MIT License）修改而来。
 > 原始项目是一个功能完备的 AI 股票分析平台，包含 Web UI、桌面端、多 Bot 渠道等。
 > 本 Fork 的核心变更：
-> - 🧹 **精简为工具/库形态** — 剥离平台层（Web UI、桌面端、Bot、独立调度器）
-> - 🤖 **集成 OpenClaw Agent 驱动** — 由 AI Agent（蜜蜜）接管调度、交互与推送
-> - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策报告、策略系统等
+> - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送
+> - 🤖 **AI Agent 驱动** — 由蜜蜜（AI Agent）通过 CLI/MCP 调用，输出结构化 JSON，不再面向人用
+> - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策分析、策略系统
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -47,7 +47,7 @@ pip install -r requirements.txt
 # 配置环境变量
 cp .env.example .env && vim .env
 
-# 运行分析
+# 运行分析（JSON 输出）
 python main.py
 ```
 
@@ -55,44 +55,9 @@ python main.py
 
 ```bash
 python main.py --debug              # 调试模式
-python main.py --dry-run            # 干跑（不推送）
+python main.py --dry-run            # 干跑
 python main.py --stocks 600519,hk00700,AAPL   # 指定股票
 python main.py --market-review      # 仅大盘复盘
-python main.py --serve-only         # 仅启动 API 服务
-```
-
----
-
-## 📱 推送效果示例
-
-### 决策仪表盘
-```
-🎯 2026-02-08 决策仪表盘
-共分析3只股票 | 🟢买入:0 🟡观望:2 🔴卖出:1
-
-📊 分析结果摘要
-⚪ 中钨高新(000657): 观望 | 评分 65 | 看多
-⚪ 永鼎股份(600105): 观望 | 评分 48 | 震荡
-🟡 新莱应材(300260): 卖出 | 评分 35 | 看空
-
-⚪ 中钨高新 (000657)
-📰 重要信息速览
-💭 舆情情绪: 市场关注其AI属性与业绩高增长，情绪偏积极
-🚨 风险警报: 2月5日主力资金大幅净卖出3.63亿元
-✨ 利好催化: AI服务器HDI核心供应商，业绩强劲增长
-```
-
-### 大盘复盘
-```
-🎯 2026-01-10 大盘复盘
-
-📊 主要指数
-- 上证指数: 3250.12 (🟢+0.85%)
-- 深证成指: 10521.36 (🟢+1.02%)
-- 创业板指: 2156.78 (🟢+1.35%)
-
-📈 市场概况
-上涨: 3920 | 下跌: 1349 | 涨停: 155 | 跌停: 3
 ```
 
 ---

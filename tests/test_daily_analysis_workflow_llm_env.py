@@ -10,11 +10,10 @@ import yaml
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-TEMPLATE_PATH = ROOT_DIR / "apps/dsa-web/src/components/settings/llmProviderTemplates.ts"
 WORKFLOW_PATH = ROOT_DIR / ".github/workflows/00-daily-analysis.yml"
 ENV_EXAMPLE_PATH = ROOT_DIR / ".env.example"
 
-EXPECTED_TEMPLATE_CHANNELS = {
+EXPECTED_CHANNELS = {
     "aihubmix",
     "deepseek",
     "dashscope",
@@ -31,21 +30,6 @@ EXPECTED_TEMPLATE_CHANNELS = {
 }
 
 
-def _extract_provider_templates() -> dict[str, str]:
-    content = TEMPLATE_PATH.read_text(encoding="utf-8")
-    matches = re.findall(
-        r"channelId:\s*'(?P<channel>[^']+)'.*?baseUrl:\s*'(?P<base_url>[^']*)'",
-        content,
-        flags=re.DOTALL,
-    )
-    assert matches, "No provider channelId entries were found in llmProviderTemplates.ts"
-
-    templates = {channel: base_url for channel, base_url in matches if channel != "custom"}
-    assert EXPECTED_TEMPLATE_CHANNELS.issubset(templates.keys())
-    assert "ark" not in templates
-    return templates
-
-
 def _load_daily_analysis_env() -> dict[str, str]:
     workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
     steps = workflow["jobs"]["analyze"]["steps"]
@@ -59,10 +43,9 @@ def _load_daily_analysis_env() -> dict[str, str]:
 
 
 def test_daily_analysis_maps_all_provider_template_channels() -> None:
-    templates = _extract_provider_templates()
     env = _load_daily_analysis_env()
 
-    for channel in templates:
+    for channel in EXPECTED_CHANNELS:
         prefix = f"LLM_{channel.upper()}_"
         for suffix in (
             "PROTOCOL",
@@ -79,10 +62,9 @@ def test_daily_analysis_maps_all_provider_template_channels() -> None:
 
 
 def test_daily_analysis_keeps_channel_secrets_in_secrets_context() -> None:
-    templates = _extract_provider_templates()
     env = _load_daily_analysis_env()
 
-    for channel in templates:
+    for channel in EXPECTED_CHANNELS:
         upper = channel.upper()
         for suffix in ("API_KEY", "API_KEYS"):
             key = f"LLM_{upper}_{suffix}"
@@ -95,20 +77,17 @@ def test_daily_analysis_keeps_channel_secrets_in_secrets_context() -> None:
 
 
 def test_env_example_includes_provider_template_channel_examples() -> None:
-    templates = _extract_provider_templates()
     env_example = ENV_EXAMPLE_PATH.read_text(encoding="utf-8")
 
-    for channel, base_url in templates.items():
+    for channel in EXPECTED_CHANNELS:
         upper = channel.upper()
         assert f"LLM_CHANNELS={channel}" in env_example
         assert f"LLM_{upper}_MODELS=" in env_example
 
         if channel != "ollama":
             assert f"LLM_{upper}_API_KEY=" in env_example
-        if base_url:
-            assert f"LLM_{upper}_BASE_URL=" in env_example
-        if channel != "ollama":
             assert f"LLM_{upper}_PROTOCOL=" in env_example
+        # base url no longer validated here — source template was removed
 
     assert "LLM_CHANNELS=ark" not in env_example
     assert "LLM_ARK_" not in env_example

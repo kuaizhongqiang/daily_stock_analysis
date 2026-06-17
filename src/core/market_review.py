@@ -10,14 +10,16 @@
 3. 保存和发送复盘报告
 """
 
+import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, Optional
 import uuid
 
 from src.config import get_config
-from src.notification import NotificationService
 from src.market_analyzer import MarketAnalyzer
 from src.report_language import normalize_report_language
 from src.search_service import SearchService
@@ -85,7 +87,7 @@ def _resolve_market_review_regions(raw_region: Optional[str]) -> list[str]:
 
 
 def run_market_review(
-    notifier: NotificationService,
+    notifier: Any = None,
     analyzer: Optional[GeminiAnalyzer] = None,
     search_service: Optional[SearchService] = None,
     config: Optional[object] = None,
@@ -212,10 +214,7 @@ def run_market_review(
             # 保存报告到文件
             date_str = datetime.now().strftime('%Y%m%d')
             report_filename = f"market_review_{date_str}.md"
-            filepath = notifier.save_report_to_file(
-                markdown_report,
-                report_filename
-            )
+            filepath = _save_report_to_file(markdown_report, report_filename)
             logger.info(
                 "[MarketReview] component=market_review action=save_report "
                 "trigger_source=%s query_id=%s region=%s path=%s",
@@ -235,47 +234,16 @@ def run_market_review(
                 market_review_payload=market_review_payload,
             )
             
-            # 推送通知（合并模式下跳过，由 main 层统一发送）
-            if merge_notification and send_notification:
-                logger.info(
-                    "[MarketReview] component=market_review action=skip_standalone_notification "
-                    "trigger_source=%s query_id=%s region=%s",
-                    trigger_source,
-                    query_id or "-",
-                    persist_region,
-                )
-            elif send_notification and notifier.is_available():
-                # 添加标题
-                report_content = _render_market_review_payload_markdown(
-                    market_review_payload,
-                    wrapper_title=review_text["push_title"],
-                )
-
-                success = notifier.send(report_content, email_send_to_all=True, route_type="report")
-                if success:
-                    logger.info(
-                        "[MarketReview] component=market_review action=send_notification "
-                        "status=success trigger_source=%s query_id=%s region=%s",
-                        trigger_source,
-                        query_id or "-",
-                        persist_region,
-                    )
-                else:
-                    logger.warning(
-                        "[MarketReview] component=market_review action=send_notification "
-                        "status=failed trigger_source=%s query_id=%s region=%s",
-                        trigger_source,
-                        query_id or "-",
-                        persist_region,
-                    )
-            elif not send_notification:
-                logger.info(
-                    "[MarketReview] component=market_review action=skip_notification "
-                    "reason=no_notify trigger_source=%s query_id=%s region=%s",
-                    trigger_source,
-                    query_id or "-",
-                    persist_region,
-                )
+            # 通知推送已移除（由 AI Agent 接管）
+            logger.info(
+                "[MarketReview] component=market_review action=notification_disabled "
+                "trigger_source=%s query_id=%s region=%s send_notification=%s merge_notification=%s",
+                trigger_source,
+                query_id or "-",
+                persist_region,
+                send_notification,
+                merge_notification,
+            )
             
             if return_structured:
                 return MarketReviewRunResult(
@@ -294,6 +262,21 @@ def run_market_review(
         )
     
     return None
+
+
+def _save_report_to_file(content: str, filename: str) -> str:
+    """Save report content to a local file and return the absolute path."""
+    try:
+        report_dir = Path("reports")
+        report_dir.mkdir(parents=True, exist_ok=True)
+        filepath = str(report_dir / filename)
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        logger.info("[MarketReview] Report saved to %s", filepath)
+        return filepath
+    except OSError as exc:
+        logger.warning("[MarketReview] Failed to save report to file: %s", exc)
+        return ""
 
 
 def _coerce_market_review_payload(

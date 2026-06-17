@@ -7,9 +7,7 @@
 ## 1. 硬规则
 
 - 遵循现有目录边界：
-  - 后端逻辑优先放在 `src/`、`data_provider/`、`api/`、`bot/`
-  - Web 前端改动在 `apps/dsa-web/`
-  - 桌面端改动在 `apps/dsa-desktop/`
+  - 后端逻辑优先放在 `src/`、`data_provider/`、`api/`
   - 部署与流水线改动在 `scripts/`、`.github/workflows/`、`docker/`
 - 未经明确确认，不执行 `git commit`、`git tag`、`git push`。
 - commit message 使用英文，不添加 `Co-Authored-By`。
@@ -58,22 +56,18 @@ python scripts/check_ai_assets.py
 ## 3. 仓库速览
 
 - 项目定位：股票智能分析系统，覆盖 A 股、港股、美股。
-- 主流程：抓取数据 -> 技术分析/新闻检索 -> LLM 分析 -> 生成报告 -> 通知推送。
+- 主流程：抓取数据 -> 技术分析/新闻检索 -> LLM 分析 -> 结构化 JSON 输出。
 - 关键入口：
   - `main.py`：分析任务主入口
   - `server.py`：FastAPI 服务入口
-  - `apps/dsa-web/`：Web 前端
-  - `apps/dsa-desktop/`：Electron 桌面端
   - `.github/workflows/`：CI、发布、每日任务
 - 核心职责：
   - `src/core/`：主流程编排
   - `src/services/`：业务服务层
   - `src/repositories/`：数据访问层
-  - `src/reports/`：报告生成
   - `src/schemas/`：Schema / 数据结构
   - `data_provider/`：多数据源适配与 fallback
   - `api/`：FastAPI API
-  - `bot/`：机器人接入
   - `scripts/`：本地脚本
   - `.github/scripts/`：GitHub 自动化脚本
   - `tests/`：pytest 测试
@@ -90,9 +84,7 @@ python main.py --dry-run
 python main.py --stocks 600519,hk00700,AAPL
 python main.py --market-review
 python main.py --schedule
-python main.py --serve
-python main.py --serve-only
-uvicorn server:app --reload --host 0.0.0.0 --port 8000
+python main.py --schedule
 ```
 
 ### 后端验证
@@ -105,17 +97,14 @@ python -m pytest -m "not network"
 python -m py_compile <changed_python_files>
 ```
 
-### Web / Desktop
+### dsa CLI
 
 ```bash
-cd apps/dsa-web
-npm ci
-npm run lint
-npm run build
-
-cd ../dsa-desktop
-npm install
-npm run build
+pip install click
+dsa analyze 600519
+dsa resolve 茅台
+dsa submit 600519
+dsa status <job_id>
 ```
 
 ### PR / CI 证据
