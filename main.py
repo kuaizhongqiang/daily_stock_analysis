@@ -263,10 +263,6 @@ def parse_arguments() -> argparse.Namespace:
   python main.py --debug            # 调试模式
   python main.py --dry-run          # 仅获取数据，不进行 AI 分析
   python main.py --stocks 600519,000001  # 指定分析特定股票
-  python main.py --no-notify        # 不发送推送通知
-  python main.py --check-notify     # 检查通知配置，不发送通知
-  python main.py --single-notify    # 启用单股推送模式（每分析完一只立即推送）
-  python main.py --schedule         # 启用定时任务模式
   python main.py --market-review    # 仅运行大盘复盘
         '''
     )
@@ -312,18 +308,6 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=None,
         help='并发线程数（默认使用配置值）'
-    )
-
-    parser.add_argument(
-        '--schedule',
-        action='store_true',
-        help='启用定时任务模式，每日定时执行'
-    )
-
-    parser.add_argument(
-        '--no-run-immediately',
-        action='store_true',
-        help='定时任务启动时不立即执行一次'
     )
 
     parser.add_argument(
@@ -586,11 +570,7 @@ def run_full_analysis(
             and not args.no_market_review
             and effective_region != ''
         ):
-            schedule_mode = bool(
-                getattr(args, 'schedule', False)
-                or getattr(config, 'schedule_enabled', False)
-            )
-            review_trigger_source = "schedule" if schedule_mode else "cli"
+            review_trigger_source = "cli"
             review_result = _run_market_review_with_shared_lock(
                 config,
                 run_market_review,
@@ -744,47 +724,6 @@ def start_bot_stream_clients(config: Config) -> None:
     pass
 
 
-def _resolve_scheduled_stock_codes(stock_codes: Optional[List[str]]) -> Optional[List[str]]:
-    """Scheduled runs should always read the latest persisted watchlist."""
-    if stock_codes is not None:
-        logger.warning(
-            "定时模式下检测到 --stocks 参数；计划执行将忽略启动时股票快照，并在每次运行前重新读取最新的 STOCK_LIST。"
-        )
-    return None
-
-
-def _reload_runtime_config() -> Config:
-    """Reload config from the latest persisted `.env` values for scheduled runs."""
-    _reload_env_file_values_preserving_overrides()
-    Config.reset_instance()
-    return get_config()
-
-
-def _build_schedule_time_provider(default_schedule_time: str):
-    """Read the latest schedule time directly from the active config file.
-
-    Fallback order:
-    1. Process-level env override (set before launch) → honour it.
-    2. Persisted config file value (written by WebUI) → use it.
-    3. Documented system default ``"18:00"`` → always fall back here so
-       that clearing SCHEDULE_TIME in WebUI correctly resets the schedule.
-    """
-    from src.core.config_manager import ConfigManager
-
-    _SYSTEM_DEFAULT_SCHEDULE_TIME = "18:00"
-    manager = ConfigManager()
-
-    def _provider() -> str:
-        if "SCHEDULE_TIME" in _INITIAL_PROCESS_ENV:
-            return os.getenv("SCHEDULE_TIME", default_schedule_time)
-
-        config_map = manager.read_config_map()
-        schedule_time = (config_map.get("SCHEDULE_TIME", "") or "").strip()
-        if schedule_time:
-            return schedule_time
-        return _SYSTEM_DEFAULT_SCHEDULE_TIME
-
-    return _provider
 
 
 def main() -> int:
@@ -947,56 +886,6 @@ def main() -> int:
             )
             return 0
 
-        # 模式2: 定时任务模式
-        if args.schedule or config.schedule_enabled:
-            logger.info("模式: 定时任务")
-            logger.info(f"每日执行时间: {config.schedule_time}")
-
-            # Determine whether to run immediately:
-            # Command line arg --no-run-immediately overrides config if present.
-            # Otherwise use config (defaults to True).
-            should_run_immediately = config.schedule_run_immediately
-            if getattr(args, 'no_run_immediately', False):
-                should_run_immediately = False
-
-            logger.info(f"启动时立即执行: {should_run_immediately}")
-
-            from src.scheduler import run_with_schedule
-            scheduled_stock_codes = _resolve_scheduled_stock_codes(stock_codes)
-            schedule_time_provider = _build_schedule_time_provider(config.schedule_time)
-
-            def scheduled_task():
-                runtime_config = _reload_runtime_config()
-                run_full_analysis(runtime_config, args, scheduled_stock_codes)
-
-            background_tasks = []
-            if getattr(config, 'agent_event_monitor_enabled', False):
-                from src.services.alert_worker import AlertWorker
-
-                interval_minutes = max(1, getattr(config, 'agent_event_monitor_interval_minutes', 5))
-                alert_worker = AlertWorker(config_provider=_reload_runtime_config)
-
-                def event_monitor_task():
-                    stats = alert_worker.run_once()
-                    triggered_count = stats.get("triggered", 0)
-                    if triggered_count:
-                        logger.info("[EventMonitor] 本轮触发 %d 条提醒", triggered_count)
-
-                background_tasks.append({
-                    "task": event_monitor_task,
-                    "interval_seconds": interval_minutes * 60,
-                    "run_immediately": True,
-                    "name": "agent_event_monitor",
-                })
-
-            run_with_schedule(
-                task=scheduled_task,
-                schedule_time=config.schedule_time,
-                run_immediately=should_run_immediately,
-                background_tasks=background_tasks,
-                schedule_time_provider=schedule_time_provider,
-            )
-            return 0
 
         # 模式3: 正常单次运行
         if config.run_immediately:
@@ -1007,7 +896,7 @@ def main() -> int:
         logger.info("\n程序执行完成")
 
         # 如果启用了服务且是非定时任务模式，保持程序运行
-        keep_running = start_serve and not (args.schedule or config.schedule_enabled)
+        keep_running = start_serve
         if keep_running:
             logger.info("API 服务运行中 (按 Ctrl+C 退出)...")
             try:

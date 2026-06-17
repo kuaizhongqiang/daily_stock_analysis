@@ -5,8 +5,10 @@
 > **Fork 说明**：本项目基于 [ZhuLinsen/daily_stock_analysis](https://github.com/ZhuLinsen/daily_stock_analysis)（MIT License）修改而来。
 > 原始项目是一个功能完备的 AI 股票分析平台，包含 Web UI、桌面端、多 Bot 渠道等。
 > 本 Fork 的核心变更：
-> - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送
-> - 🤖 **AI Agent 驱动** — 由蜜蜜（AI Agent）通过 CLI/MCP 调用，输出结构化 JSON，不再面向人用
+>
+> - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送、定时任务
+> - 🤖 **AI Agent 驱动** — 由 AI Agent 通过 CLI / MCP / OpenClaw Skill 调用，无自主行为
+> - 💻 **本地 LLM 优先** — 默认使用 LM Studio，无需云 API Key
 > - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策分析、策略系统
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -60,6 +62,15 @@ python main.py --stocks 600519,hk00700,AAPL   # 指定股票
 python main.py --market-review      # 仅大盘复盘
 ```
 
+CLI 工具（需 `pip install -e .`）：
+
+```bash
+dsa analyze 600519                  # 分析股票
+dsa market                          # 大盘复盘
+dsa resolve 茅台                     # 股票名称解析
+dsa mcp                            # 启动 MCP Server
+```
+
 ---
 
 ## ⚙️ 配置说明
@@ -71,7 +82,8 @@ python main.py --market-review      # 仅大盘复盘
 | 环境变量 | 说明 |
 |---------|------|
 | `STOCK_LIST` | 自选股代码，如 `600519,hk00700,AAPL` |
-| `OPENAI_API_KEY` / `OPENAI_BASE_URL` | AI 模型 API（兼容 DeepSeek、通义千问等） |
+| `LLM_LM_STUDIO_BASE_URL` | 本地 LM Studio 地址（默认 `http://localhost:1234/v1`） |
+| `LITELLM_MODEL` | 本地模型名（默认 `openai/qwen/qwen3.5-9b`） |
 | `SERPAPI_API_KEYS` | 新闻搜索 API |
 | `TAVILY_API_KEYS` | 新闻搜索 API |
 
