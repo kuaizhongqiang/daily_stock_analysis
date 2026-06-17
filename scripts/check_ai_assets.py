@@ -48,12 +48,14 @@ def ensure_symlink() -> None:
     ensure_file_exists(AGENTS, "canonical AGENTS.md")
     if not CLAUDE.exists():
         fail("CLAUDE.md is missing")
-    if not CLAUDE.is_symlink():
-        fail("CLAUDE.md must be a symlink to AGENTS.md")
-
-    target = Path(CLAUDE.readlink())
-    if target != Path("AGENTS.md"):
-        fail(f"CLAUDE.md must point to AGENTS.md, found: {target}")
+    if CLAUDE.is_symlink():
+        target = Path(CLAUDE.readlink())
+        if target != Path("AGENTS.md"):
+            fail(f"CLAUDE.md must point to AGENTS.md, found: {target}")
+    else:
+        # CLAUDE.md as a standalone file is allowed in the fork
+        print("  [info] CLAUDE.md is a standalone file (not a symlink)")
+        print("  [info] Both AGENTS.md and CLAUDE.md must be kept in sync")
 
 
 def ensure_copilot_entry() -> None:
