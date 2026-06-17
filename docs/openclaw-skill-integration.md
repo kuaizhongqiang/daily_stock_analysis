@@ -11,7 +11,8 @@
 
 1. **daily_stock_analysis 必须已运行**：执行 `python main.py --serve-only` 或通过 Docker 部署，使 API 长期可用
 2. **openclaw 需具备 HTTP 调用能力**：如 `system.run` 执行 curl，或内置 HTTP 工具（如 api-tester 等）
-3. **说明**：GitHub Actions 仅做定时任务，不长期暴露 API，需本地或 Docker 运行 DSA
+3. **LLM 配置**：DSA 默认使用本地 LM Studio（无需云 API Key），确保 LM Studio 已启动并加载模型
+4. **说明**：Fork 版本已无定时分析功能，由 AI Agent 按需触发分析
 
 ## 核心 API 参考
 
@@ -173,10 +174,10 @@ curl -X POST {DSA_BASE_URL}/api/v1/agent/chat \
 |------|----------|----------|
 | 连接失败 | DSA 未运行、端口错误、防火墙 | 确认 `python main.py --serve-only` 已启动，检查 `DSA_BASE_URL` |
 | 400 错误 | stock_code 格式错误或缺失 | 检查代码格式（见上文表格），确保请求体包含 `stock_code` |
-| 500 错误 | AI 配置、数据源、网络问题 | 查看 DSA 日志，确认 GEMINI_API_KEY 等已配置 |
+| 500 错误 | AI 配置、数据源、网络问题 | 查看 DSA 日志，确认 LM Studio 已启动且模型已加载 |
 | Agent 400 | Agent 模式未启用 | 在 DSA 的 `.env` 中设置 `AGENT_MODE=true` |
 | 分析超时 | 同步模式等待时间过长 | 增加 HTTP 客户端超时，或改用 `async_mode: true` 轮询状态 |
 
 ## 认证说明
 
-默认情况下 DSA API 无需认证。若在 `.env` 中启用了 `ADMIN_AUTH_ENABLED=true`，则需在 Skill 调用时携带登录后获得的 Cookie，具体方式取决于 openclaw 的 HTTP 工具能力（当前 API 仅支持 Cookie 认证，不支持 Bearer Token）。
+DSA API 默认无需认证。

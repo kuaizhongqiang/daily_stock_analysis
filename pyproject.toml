@@ -1,3 +1,17 @@
+[project]
+name = "dsa"
+version = "0.1.0"
+description = "Stock Intelligent Analysis System — CLI + MCP Server"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+]
+[project.optional-dependencies]
+mcp = ["mcp>=1.0.0"]
+
+[project.scripts]
+dsa = "dsa.cli:main"
+
 [tool.black]
 line-length = 120
 target-version = ['py310', 'py311', 'py312']

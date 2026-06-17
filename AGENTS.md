@@ -141,7 +141,7 @@ gh run view <run_id> --log-failed
 | `ai-governance` | `.github/workflows/ci.yml` | 校验 `AGENTS.md` / `CLAUDE.md` / `.github` 指令 / `.claude/skills` 关系 | 是 |
 | `backend-gate` | `.github/workflows/ci.yml` | 执行 `./scripts/ci_gate.sh` | 是 |
 | `docker-build` | `.github/workflows/ci.yml` | Docker 构建与关键模块导入 smoke | 是 |
-| `network-smoke` | `.github/workflows/network-smoke.yml` | `pytest -m network` | 否，观测项 |
+| `network-smoke` | `.github/workflows/network-smoke.yml` | `pytest -m network` + `scripts/test.sh quick` | 否，观测项 |
 | `pr-review` | `.github/workflows/pr-review.yml` | PR 静态检查 + AI 审查 + 自动标签 | 否，辅助项 |
 
 若 PR 上已有对应 CI 结果，可直接引用 CI 结论；若 CI 未覆盖改动面，或本地与 CI 环境差异较大，需要补充说明本地验证与缺口。
@@ -149,17 +149,14 @@ gh run view <run_id> --log-failed
 ### 按改动面执行
 
 - Python 后端改动：
-  - 适用范围：`main.py`、`src/`、`data_provider/`、`api/`、`bot/`、`tests/`
+  - 适用范围：`main.py`、`src/`、`data_provider/`、`api/`、`tests/`
   - 优先执行：`./scripts/ci_gate.sh`
   - 最低要求：`python -m py_compile <changed_python_files>`
-  - 若影响 API、任务编排、报告生成、通知发送、数据源 fallback、认证、调度，交付说明中要写明是否覆盖了对应路径。
+  - 若影响 API、任务编排、报告生成、数据源 fallback、认证，交付说明中要写明是否覆盖了对应路径。
 
-- CLI / MCP 改动（`dsa/` 包）：
-  - 适用范围：`dsa/**`
-  - 默认执行：`pip install -e . && dsa --help`
-  - 若新增 MCP 工具，需验证 `python -m dsa.mcp_server` 正常启动并响应协议请求。
 
-- API / Schema 改动：
+
+- API / Schema / 认证联动改动：
   - 适用范围：`api/**`、`src/schemas/**`、`src/services/**`
   - 至少覆盖对应后端验证 + 受影响客户端构建验证。
   - 若涉及登录、Cookie、会话、轮询状态、字段增删或枚举变化，必须明确写出兼容性影响。
@@ -184,8 +181,8 @@ gh run view <run_id> --log-failed
 ## 7. 稳定性护栏
 
 - 配置与运行入口：
-  - 修改 `.env` 语义、默认值、CLI 参数、服务启动方式时，要同时评估本地运行、Docker、GitHub Actions、API 的影响。
-  - 新配置优先做到”不配置也可运行，配置后增强能力”，避免叠加开关和互斥模式。
+  - 修改 `.env` 语义、默认值、CLI 参数、服务启动方式、调度语义时，要同时评估本地运行、Docker、GitHub Actions、API 的影响。
+  - 新配置优先做到“不配置也可运行，配置后增强能力”，避免叠加开关和互斥模式。
 
 - 数据源与 fallback：
   - 修改 `data_provider/` 时，要关注数据源优先级、失败降级、字段标准化、缓存与超时策略。
