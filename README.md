@@ -6,10 +6,11 @@
 > 原始项目是一个功能完备的 AI 股票分析平台，包含 Web UI、桌面端、多 Bot 渠道等。
 > 本 Fork 的核心变更：
 >
-> - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送、定时任务
+> - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送、定时任务（第一阶段）
 > - 🤖 **AI Agent 驱动** — 由 AI Agent 通过 CLI / MCP / OpenClaw Skill 调用，无自主行为
 > - 💻 **本地 LLM 优先** — 默认使用 LM Studio，无需云 API Key
-> - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策分析、策略系统
+> - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策分析、15+ 策略系统
+> - 🏊 **股池 + 向量搜索 + 历史留存** — 轻量级股池管理、语义搜索、会话追踪（第二阶段）
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -26,6 +27,9 @@
 | 多市场数据聚合 | A股、港股、美股、ETF；行情、K 线、技术指标、资金流、筹码、新闻、公告和基本面 |
 | 策略系统 | 均线金叉、缠论、波浪理论、多头趋势、热点题材、事件驱动、成长质量、预期重估等 15+ 策略 |
 | Agent 问股 | 多轮追问，策略驱动的分析对话，支持自定义策略 YAML |
+| 🏊 **股池管理** | 轻量级自选股分组，标签管理，CLI/API/MCP/Agent 四通道操作 |
+| 🔍 **语义搜索** | 自然语言搜索历史分析/新闻/对话，LM Studio 向量化，无需额外模型 |
+| 📜 **历史留存** | 分析会话追踪、全文搜索、JSON/CSV 导出、按策略自动清理 |
 
 ### 数据来源
 
@@ -65,10 +69,27 @@ python main.py --market-review      # 仅大盘复盘
 CLI 工具（需 `pip install -e .`）：
 
 ```bash
+# 股票分析
 dsa analyze 600519                  # 分析股票
 dsa market                          # 大盘复盘
 dsa resolve 茅台                     # 股票名称解析
-dsa mcp                            # 启动 MCP Server
+
+# 股池管理（第二期）
+dsa pool create 我的自选              # 创建股池
+dsa pool add 1 600519 --market cn   # 添加股票
+dsa pool stocks 1                   # 查看池内股票
+
+# 语义搜索（第二期）
+dsa vector search "茅台近期走势"      # 自然语言搜索
+dsa vector status                    # 索引状态
+
+# 历史管理（第二期）
+dsa history search 茅台              # 全文搜索历史
+dsa history export --format json     # 导出历史
+dsa history stats                    # 统计信息
+
+# MCP Server
+dsa mcp                            # 启动 MCP Server（11 个工具）
 ```
 
 ---
