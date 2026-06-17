@@ -544,17 +544,14 @@ def build_event_monitor_from_config(config=None, notifier=None) -> Optional[Even
     if not monitor.rules:
         return None
 
-    from src.notification import NotificationBuilder, NotificationService
-
-    notification_service = notifier or NotificationService()
+    notification_service = notifier
 
     def _notify(triggered: TriggeredAlert) -> None:
-        title = f"Event Alert | {triggered.rule.stock_code}"
-        content = triggered.message or triggered.rule.description or "Alert triggered"
-        alert_text = NotificationBuilder.build_simple_alert(title=title, content=content, alert_type="warning")
-        sent = notification_service.send(alert_text, route_type="alert")
-        if not sent:
-            logger.info("[EventMonitor] No notification channel available for alert: %s", title)
+        logger.info(
+            "[EventMonitor] Alert triggered (notification disabled): stock_code=%s message=%s",
+            triggered.rule.stock_code,
+            triggered.message or triggered.rule.description or "Alert triggered",
+        )
 
     monitor.on_trigger(_notify)
     logger.info("[EventMonitor] Loaded %d configured alert rule(s)", len(monitor.rules))

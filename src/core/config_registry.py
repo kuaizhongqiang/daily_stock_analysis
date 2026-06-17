@@ -15,8 +15,6 @@ from src.config import (
     AGENT_MAX_STEPS_DEFAULT,
     DEFAULT_ALPHASIFT_INSTALL_SPEC,
 )
-from src.notification_noise import NOTIFICATION_SEVERITIES
-from src.notification_routing import ROUTABLE_NOTIFICATION_CHANNELS
 
 SCHEMA_VERSION = "2026-05-25"
 
@@ -2313,84 +2311,6 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         ],
         "warning_codes": [],
     },
-    "NOTIFICATION_REPORT_CHANNELS": {
-        "title": "Report Notification Channels",
-        "description": "Comma-separated route for report notifications. Empty keeps all configured channels.",
-        "category": "notification",
-        "data_type": "array",
-        "ui_control": "textarea",
-        "is_sensitive": False,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": "",
-        "options": [{"label": channel, "value": channel} for channel in ROUTABLE_NOTIFICATION_CHANNELS],
-        "validation": {"allowed_values": list(ROUTABLE_NOTIFICATION_CHANNELS), "delimiter": ","},
-        "display_order": 62,
-        "help_key": "settings.notification.channel_routing",
-        "examples": [
-            "NOTIFICATION_REPORT_CHANNELS=email,feishu",
-            "NOTIFICATION_REPORT_CHANNELS=",
-        ],
-        "docs": [
-            {
-                "label": "通知渠道与路由",
-                "href": "https://github.com/ZhuLinsen/daily_stock_analysis/blob/main/docs/notifications.md",
-            },
-        ],
-        "warning_codes": [],
-    },
-    "NOTIFICATION_ALERT_CHANNELS": {
-        "title": "Alert Notification Channels",
-        "description": "Comma-separated route for event alert notifications. Empty keeps all configured channels.",
-        "category": "notification",
-        "data_type": "array",
-        "ui_control": "textarea",
-        "is_sensitive": False,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": "",
-        "options": [{"label": channel, "value": channel} for channel in ROUTABLE_NOTIFICATION_CHANNELS],
-        "validation": {"allowed_values": list(ROUTABLE_NOTIFICATION_CHANNELS), "delimiter": ","},
-        "display_order": 63,
-        "help_key": "settings.notification.channel_routing",
-        "examples": [
-            "NOTIFICATION_ALERT_CHANNELS=feishu,telegram",
-            "NOTIFICATION_ALERT_CHANNELS=",
-        ],
-        "docs": [
-            {
-                "label": "通知渠道与路由",
-                "href": "https://github.com/ZhuLinsen/daily_stock_analysis/blob/main/docs/notifications.md",
-            },
-        ],
-        "warning_codes": [],
-    },
-    "NOTIFICATION_SYSTEM_ERROR_CHANNELS": {
-        "title": "System Error Notification Channels",
-        "description": "Comma-separated route reserved for system error notifications. Empty keeps all configured channels.",
-        "category": "notification",
-        "data_type": "array",
-        "ui_control": "textarea",
-        "is_sensitive": False,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": "",
-        "options": [{"label": channel, "value": channel} for channel in ROUTABLE_NOTIFICATION_CHANNELS],
-        "validation": {"allowed_values": list(ROUTABLE_NOTIFICATION_CHANNELS), "delimiter": ","},
-        "display_order": 64,
-        "help_key": "settings.notification.channel_routing",
-        "examples": [
-            "NOTIFICATION_SYSTEM_ERROR_CHANNELS=email",
-            "NOTIFICATION_SYSTEM_ERROR_CHANNELS=",
-        ],
-        "docs": [
-            {
-                "label": "通知渠道与路由",
-                "href": "https://github.com/ZhuLinsen/daily_stock_analysis/blob/main/docs/notifications.md",
-            },
-        ],
-        "warning_codes": [],
-    },
     "NOTIFICATION_DEDUP_TTL_SECONDS": {
         "title": "Notification Dedup TTL Seconds",
         "description": "Suppress duplicate static notifications with the same dedup key within this TTL. 0 disables deduplication.",
@@ -2486,35 +2406,6 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "examples": [
             "NOTIFICATION_TIMEZONE=Asia/Shanghai",
             "NOTIFICATION_TIMEZONE=America/New_York",
-        ],
-        "docs": [
-            {
-                "label": "通知渠道与路由",
-                "href": "https://github.com/ZhuLinsen/daily_stock_analysis/blob/main/docs/notifications.md",
-            },
-        ],
-        "warning_codes": [],
-    },
-    "NOTIFICATION_MIN_SEVERITY": {
-        "title": "Notification Minimum Severity",
-        "description": "Suppress static notifications below this severity. Empty keeps current behavior.",
-        "category": "notification",
-        "data_type": "string",
-        "ui_control": "select",
-        "is_sensitive": False,
-        "is_required": False,
-        "is_editable": True,
-        "default_value": "",
-        "options": [
-            {"label": "Not set", "value": ""},
-            *({"label": severity, "value": severity} for severity in NOTIFICATION_SEVERITIES),
-        ],
-        "validation": {"enum": ["", *NOTIFICATION_SEVERITIES]},
-        "display_order": 69,
-        "help_key": "settings.notification.MIN_SEVERITY",
-        "examples": [
-            "NOTIFICATION_MIN_SEVERITY=warning",
-            "NOTIFICATION_MIN_SEVERITY=",
         ],
         "docs": [
             {

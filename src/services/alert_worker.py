@@ -7,9 +7,9 @@ import asyncio
 import json
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from src.agent.events import (
     EventMonitor,
@@ -35,8 +35,28 @@ from src.services.market_light_service import normalize_market_region
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from src.notification import ChannelAttemptResult, NotificationDispatchResult
+
+# ── 通知相关 stub 类型（原 src.notification 已删除，由 AI Agent 接管）──
+
+@dataclass
+class ChannelAttemptResult:
+    """Stub replacement for the removed notification module."""
+    channel: str = ""
+    success: bool = False
+    error_code: Optional[str] = None
+    retryable: bool = False
+    diagnostics: Optional[str] = None
+    latency_ms: Optional[int] = None
+
+
+@dataclass
+class NotificationDispatchResult:
+    """Stub replacement for the removed notification module."""
+    dispatched: bool = False
+    success: bool = False
+    status: str = "disabled"
+    channel_results: List[ChannelAttemptResult] = field(default_factory=list)
+    message: str = "Notification disabled (AI Agent mode)"
 
 ALERT_WORKER_FINGERPRINT_TTL_SECONDS = 24 * 60 * 60
 DEFAULT_DB_ALERT_COOLDOWN_SECONDS = 24 * 60 * 60
@@ -475,33 +495,23 @@ class AlertWorker:
     def _db_cooldown_fallback_key(rule_key: str) -> str:
         return f"db_cooldown:{rule_key}"
 
-    def _send_notification(self, runtime_rule: RuntimeAlertRule, result: Dict[str, Any]) -> "NotificationDispatchResult":
-        from src.notification import NotificationBuilder, NotificationService
-
-        notification_service = self.notifier or NotificationService()
-        title = f"Event Alert | {self._display_target(runtime_rule)}"
-        content = result.get("reason") or result.get("message") or runtime_rule.rule.description or "Alert triggered"
-        diagnostics = self._diagnostics_payload(result.get("diagnostics"))
-        visibility = diagnostics.get("analysis_visibility") if isinstance(diagnostics.get("analysis_visibility"), dict) else None
-        if visibility is None:
-            visibility = self._build_analysis_visibility(runtime_rule, result)
-        excerpt = format_public_phase_pack_excerpt(
-            visibility.get("market_phase_summary"),
-            visibility.get("analysis_context_pack_overview"),
-            source=visibility.get("source"),
+    def _send_notification(self, runtime_rule: RuntimeAlertRule, result: Dict[str, Any]) -> NotificationDispatchResult:
+        logger.info(
+            "[AlertWorker] Notification disabled (AI Agent mode): target=%s reason=%s",
+            self._display_target(runtime_rule),
+            result.get("reason") or result.get("message") or "alert triggered",
         )
-        if excerpt:
-            content = f"{content}\n\n{excerpt}"
-        alert_text = NotificationBuilder.build_simple_alert(title=title, content=content, alert_type="warning")
+        return NotificationDispatchResult(
+            dispatched=False,
+            success=False,
+            status="disabled",
+            message="Notification disabled (AI Agent mode)",
+        )
 
-        return notification_service.send_with_results(alert_text, route_type="alert")
-
-    def _send_notification_safely(self, runtime_rule: RuntimeAlertRule, result: Dict[str, Any]) -> "NotificationDispatchResult":
+    def _send_notification_safely(self, runtime_rule: RuntimeAlertRule, result: Dict[str, Any]) -> NotificationDispatchResult:
         try:
             return self._send_notification(runtime_rule, result)
         except Exception as exc:
-            from src.notification import ChannelAttemptResult, NotificationDispatchResult
-
             sanitized = self.service._sanitize_text(str(exc) or "notification failed")
             logger.warning(
                 "[AlertWorker] Failed to send alert notification for %s: %s",
@@ -527,7 +537,7 @@ class AlertWorker:
     def _record_notification_attempts_safely(
         self,
         trigger_id: Optional[int],
-        dispatch: "NotificationDispatchResult",
+        dispatch: NotificationDispatchResult,
     ) -> int:
         try:
             return self._record_notification_attempts(trigger_id, dispatch)
@@ -538,7 +548,7 @@ class AlertWorker:
             )
             return 0
 
-    def _record_notification_attempts(self, trigger_id: Optional[int], dispatch: "NotificationDispatchResult") -> int:
+    def _record_notification_attempts(self, trigger_id: Optional[int], dispatch: NotificationDispatchResult) -> int:
         channel_results = list(dispatch.channel_results or [])
         if not channel_results:
             channel_results = [self._synthetic_attempt_for_dispatch(dispatch)]
@@ -560,9 +570,7 @@ class AlertWorker:
         return recorded
 
     @staticmethod
-    def _synthetic_attempt_for_dispatch(dispatch: "NotificationDispatchResult") -> "ChannelAttemptResult":
-        from src.notification import ChannelAttemptResult
-
+    def _synthetic_attempt_for_dispatch(dispatch: NotificationDispatchResult) -> ChannelAttemptResult:
         status = str(dispatch.status or "unknown")
         channel_by_status = {
             "noise_suppressed": "__noise_suppressed__",
@@ -588,7 +596,7 @@ class AlertWorker:
             return None
 
     @staticmethod
-    def _dispatch_has_real_channel_success(dispatch: "NotificationDispatchResult") -> bool:
+    def _dispatch_has_real_channel_success(dispatch: NotificationDispatchResult) -> bool:
         if not dispatch.dispatched:
             return False
         for item in dispatch.channel_results or []:
@@ -639,8 +647,6 @@ class AlertWorker:
         if cooldown is None:
             return DBCooldownDecision()
 
-        from src.notification import ChannelAttemptResult, NotificationDispatchResult
-
         self._record_notification_attempts_safely(
             trigger_id,
             NotificationDispatchResult(
@@ -665,8 +671,6 @@ class AlertWorker:
         return DBCooldownDecision(suppressed=True)
 
     def _record_cooldown_read_failure_suppression(self, trigger_id: Optional[int], exc: Exception) -> None:
-        from src.notification import ChannelAttemptResult, NotificationDispatchResult
-
         sanitized = self.service._sanitize_text(str(exc) or "cooldown read failed")
         self._record_notification_attempts_safely(
             trigger_id,

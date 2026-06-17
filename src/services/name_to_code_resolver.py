@@ -218,6 +218,14 @@ def resolve_name_to_code(name: str) -> Optional[str]:
         if typo_matches and _is_single_char_typo(s, typo_matches[0]):
             logger.debug(f"[NameResolver] 命中单字误写兜底: input={s}, matched={typo_matches[0]}")
             return all_name_to_code[typo_matches[0]]
+    elif len(s) == 2:
+        # For 2-char short names (e.g. 茅台, 腾讯), do substring matching
+        # against full stock names to find partial matches.
+        names = list(all_name_to_code.keys())
+        for full_name in names:
+            if s in full_name:
+                logger.debug(f"[NameResolver] 命中短名称子串匹配: input={s}, matched={full_name}")
+                return all_name_to_code[full_name]
 
     logger.debug(f"[NameResolver] 解析失败: {s}")
     return None

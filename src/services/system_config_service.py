@@ -11,7 +11,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
@@ -44,16 +44,83 @@ from src.core.config_registry import (
 )
 from src.llm.errors import call_litellm_with_param_recovery
 from src.llm.generation_params import apply_litellm_generation_params
-from src.notification_contracts import (
-    FEISHU_APP_BOT_ENV_GROUP,
-    FEISHU_WEBHOOK_ENV_GROUP,
-    is_feishu_app_bot_env_configured,
-    is_feishu_static_env_configured,
-)
-from src.notification_noise import validate_notification_timezone
-from src.notification_utils import resolve_gotify_message_endpoint, resolve_ntfy_endpoint
+
+
+
+
+
+
+def resolve_ntfy_endpoint(ntfy_url: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    """Parse ntfy publish URL into (server_url, topic)."""
+    raw = (ntfy_url or "").strip()
+    if not raw:
+        return None, None
+    from urllib.parse import urlparse
+
+    parsed = urlparse(raw)
+    if not parsed.scheme or not parsed.netloc:
+        return None, None
+    path = parsed.path.strip("/")
+    if not path:
+        return None, None
+    topic = path.split("/")[0] if path else None
+    server_url = f"{parsed.scheme}://{parsed.netloc}"
+    return server_url, topic
+
+
+def resolve_gotify_message_endpoint(gotify_url: Optional[str]) -> Optional[str]:
+    """Return the Gotify /message endpoint URL, or None if invalid."""
+    raw = (gotify_url or "").strip()
+    if not raw:
+        return None
+    from urllib.parse import urlparse
+
+    parsed = urlparse(raw)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    base = raw.rstrip("/")
+    if base.endswith("/message"):
+        return base
+    return f"{base}/message"
+
+
+def validate_notification_timezone(value: str) -> None:
+    """Validate an IANA timezone string. Raises ValueError on invalid."""
+    try:
+        from zoneinfo import ZoneInfo
+        ZoneInfo(value)
+    except Exception as exc:
+        raise ValueError(f"Invalid timezone: {value}") from exc
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Inlined from deleted src/notification_contracts.py
+# ---------------------------------------------------------------------------
+FEISHU_WEBHOOK_ENV_GROUP: Tuple[str, ...] = ("FEISHU_WEBHOOK_URL",)
+FEISHU_APP_BOT_ENV_GROUP: Tuple[str, ...] = (
+    "FEISHU_APP_ID",
+    "FEISHU_APP_SECRET",
+    "FEISHU_CHAT_ID",
+)
+
+
+def _has_env_group(effective_map: "Mapping[str, Any]", group: Tuple[str, ...]) -> bool:
+    return all(str(effective_map.get(key) or "").strip() for key in group)
+
+
+def is_feishu_app_bot_env_configured(effective_map: "Mapping[str, Any]") -> bool:
+    """Return whether Feishu App Bot active notification is configured."""
+    return _has_env_group(effective_map, FEISHU_APP_BOT_ENV_GROUP)
+
+
+def is_feishu_static_env_configured(effective_map: "Mapping[str, Any]") -> bool:
+    """Return whether any static Feishu notification route is configured."""
+    return any(
+        _has_env_group(effective_map, group)
+        for group in (FEISHU_WEBHOOK_ENV_GROUP, FEISHU_APP_BOT_ENV_GROUP)
+    )
 
 
 class ConfigValidationError(Exception):

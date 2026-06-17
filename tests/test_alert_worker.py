@@ -15,7 +15,30 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pandas as pd
 
 from src.config import Config
-from src.notification import ChannelAttemptResult, NotificationDispatchResult
+# Inlined from deleted src/notification.py
+class ChannelAttemptResult:
+    """One static notification channel send attempt."""
+    def __init__(self, channel: str, success: bool, error_code: str | None = None,
+                 retryable: bool = False, latency_ms: int | None = None,
+                 diagnostics: str | None = None):
+        self.channel = channel
+        self.success = success
+        self.error_code = error_code
+        self.retryable = retryable
+        self.latency_ms = latency_ms
+        self.diagnostics = diagnostics
+
+
+class NotificationDispatchResult:
+    """Structured result for notification dispatch diagnostics."""
+    def __init__(self, dispatched: bool, success: bool, status: str,
+                 channel_results: list | None = None,
+                 message: str | None = None):
+        self.dispatched = dispatched
+        self.success = success
+        self.status = status
+        self.channel_results = channel_results or []
+        self.message = message
 from src.services.alert_indicators import (
     _calculate_rsi,
     compute_requested_days,
