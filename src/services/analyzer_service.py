@@ -60,7 +60,6 @@ def analyze_stock(
     result = pipeline.process_single_stock(
         code=stock_code,
         skip_analysis=False,
-        single_stock_notify=notifier is not None,
         report_type=report_type,
     )
 

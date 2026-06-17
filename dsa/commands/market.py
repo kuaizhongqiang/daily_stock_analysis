@@ -60,7 +60,7 @@ def calendar(json_out: JsonOutput, market_name: str) -> None:
     from src.core.trading_calendar import get_effective_trading_date, is_market_open
 
     today = datetime.date.today()
-    open_now = is_market_open(market_name)
+    open_now = is_market_open(market_name, today)
     effective_date = get_effective_trading_date(market_name)
 
     json_out.ok({

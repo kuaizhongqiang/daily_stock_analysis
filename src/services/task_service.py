@@ -185,7 +185,6 @@ class TaskService:
             result = pipeline.process_single_stock(
                 code=code,
                 skip_analysis=False,
-                single_stock_notify=True,
                 report_type=report_type
             )
 
