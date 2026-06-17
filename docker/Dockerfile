@@ -37,14 +37,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py ./
 COPY api/ ./api/
 COPY data_provider/ ./data_provider/
-COPY bot/ ./bot/
 COPY src/ ./src/
 COPY strategies/ ./strategies/
-COPY --from=web-builder /app/static ./static/
 COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-# Verify the bundled AlphaSift adapter from requirements.
-RUN python -c "import alphasift.dsa_adapter"
 
 # 确保数据目录存在并授权给 non-root 用户
 RUN mkdir -p /app/data /app/logs /app/reports && \
@@ -55,9 +50,6 @@ RUN mkdir -p /app/data /app/logs /app/reports && \
 ENV PYTHONUNBUFFERED=1
 ENV LOG_DIR=/app/logs
 ENV DATABASE_PATH=/app/data/stock_analysis.db
-# Web/API service
-ENV WEBUI_HOST=0.0.0.0
-ENV API_PORT=8000
 
 # 暴露 API 端口
 EXPOSE 8000
@@ -70,9 +62,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || curl -f http://localhost:8000/health \
     || python -c "import sys; sys.exit(0)"
 
-# 启动入口先修复 bind mount 目录权限，再降权为 dsa 执行应用；
-# 文档化 docker-compose exec 命令需显式使用 -u dsa，避免手动进程写入 root-owned 文件。
+# 启动入口先修复 bind mount 目录权限，再降权为 dsa 执行应用
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# 默认命令（可被覆盖）
-CMD ["python", "main.py", "--schedule"]
+# 默认命令（AI Agent 通过 CLI/MCP 按需触发）
+CMD ["python", "main.py", "--serve-only"]
