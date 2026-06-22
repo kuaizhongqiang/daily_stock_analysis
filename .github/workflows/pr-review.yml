@@ -164,7 +164,13 @@ jobs:
         if: steps.check_files.outputs.has_py_changes == 'true'
         run: |
           echo "## 🔎 代码质量检查" >> $GITHUB_STEP_SUMMARY
-          RESULT=$(flake8 $CHANGED_FILES --select=E9,F63,F7,F82 --format='%(path)s:%(row)d: %(code)s %(text)s' 2>/dev/null || true)
+          EXISTS_FILES=""
+          for f in $CHANGED_FILES; do [ -f "$f" ] && EXISTS_FILES="$EXISTS_FILES $f"; done
+          if [ -z "$EXISTS_FILES" ]; then
+            echo "✅ 无可检查的 Python 文件（可能仅为删除操作）" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          RESULT=$(flake8 $EXISTS_FILES --select=E9,F63,F7,F82 --format='%(path)s:%(row)d: %(code)s %(text)s' 2>/dev/null || true)
           if [ -n "$RESULT" ]; then
             echo "⚠️ 发现以下问题：" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
