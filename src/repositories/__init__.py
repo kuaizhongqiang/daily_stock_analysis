@@ -15,8 +15,6 @@ from src.repositories.stock_repo import StockRepository
 from src.repositories.stock_pool_repo import StockPoolRepository
 from src.repositories.stock_metadata_repo import StockMetadataRepository
 from src.repositories.data_quality_repo import DataQualityRepository
-from src.repositories.vector_index_repo import VectorIndexRepository
-
 __all__ = [
     "AnalysisRepository",
     "BacktestRepository",
@@ -25,5 +23,4 @@ __all__ = [
     "StockMetadataRepository",
     "StockPoolRepository",
     "StockRepository",
-    "VectorIndexRepository",
 ]
