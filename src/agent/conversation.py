@@ -80,6 +80,23 @@ class ConversationManager:
         # We don't delete from DB here to keep history, or we could add a delete method.
         # For now, just clear from memory.
 
+    def list_active(self) -> List[Dict[str, Any]]:
+        """返回所有活跃会话的快照列表。
+
+        Returns:
+            每个元素包含 session_id, created_at, last_active, context_keys 的字典列表。
+        """
+        with self._lock:
+            return [
+                {
+                    "session_id": sid,
+                    "created_at": str(s.created_at),
+                    "last_active": str(s.last_active),
+                    "context_keys": list(s.context.keys()),
+                }
+                for sid, s in self._sessions.items()
+            ]
+
     def _cleanup_expired(self):
         """Remove expired sessions."""
         with self._lock:

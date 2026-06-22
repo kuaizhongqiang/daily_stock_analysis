@@ -13,6 +13,8 @@ import sys
 import traceback
 from typing import Any, Dict, List, Optional
 
+from dsa.errors import ErrorCode, error_dict, is_retryable
+
 logger = logging.getLogger(__name__)
 
 # Try to import MCP SDK — fail gracefully with a clear message
@@ -24,6 +26,45 @@ try:
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
+
+
+# ---- Unified error helpers for MCP ----
+
+def _mcp_error(code: ErrorCode | str, message: str) -> str:
+    """Build a unified error JSON string for MCP tool responses."""
+    return json.dumps({
+        "status": "error",
+        "error": error_dict(code, message),
+    }, ensure_ascii=False)
+
+
+def _mcp_result(data: dict) -> str:
+    """Build a success JSON string for MCP tool responses."""
+    return json.dumps({
+        "status": "ok",
+        "data": data,
+    }, ensure_ascii=False)
+
+
+def _wrap_response(result: dict) -> str:
+    """Wrap a _try_* helper result into unified format.
+
+    - dict with {"error": "..."} → error response with UPSTREAM_ERROR
+    - anything else → success response
+    """
+    if "error" in result:
+        return json.dumps({
+            "status": "error",
+            "error": error_dict(
+                ErrorCode.UPSTREAM_ERROR,
+                result["error"],
+                retryable=True,
+            ),
+        }, ensure_ascii=False)
+    return json.dumps({
+        "status": "ok",
+        "data": result,
+    }, ensure_ascii=False)
 
 
 def _try_get_job(job_id: str) -> Optional[Dict[str, Any]]:
@@ -579,143 +620,143 @@ if MCP_AVAILABLE:
             if name == "analyze_stock":
                 stock_code = arguments.get("stock_code", "")
                 if not stock_code:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "stock_code required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "stock_code required"))]
                 result = _try_submit_job(stock_code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "check_job_status":
                 job_id = arguments.get("job_id", "")
                 if not job_id:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "job_id required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "job_id required"))]
                 result = _try_get_job(job_id)
                 if result is None:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "Job not found"}))]
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.NOT_FOUND, "Job not found"))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "resolve_stock":
                 stock_name = arguments.get("name", "")
                 result = _try_resolve_stock(stock_name)
                 if result is None:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "Could not resolve stock name"}))]
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.NOT_FOUND, "Could not resolve stock name"))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "market_status":
                 result = _try_market_status()
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "run_market_review":
                 result = _try_market_review()
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "run_analysis_sync":
                 stock_code = arguments.get("stock_code", "")
                 if not stock_code:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "stock_code required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "stock_code required"))]
                 result = _try_analyze_sync(stock_code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "list_strategies":
                 result = _try_list_strategies()
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "get_stock_quote":
                 stock_code = arguments.get("stock_code", "")
                 if not stock_code:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "stock_code required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "stock_code required"))]
                 result = _try_stock_quote(stock_code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             # ---- Stock Pool tools ----
             elif name == "pool_list":
                 active_only = arguments.get("active_only", True)
                 result = _try_pool_list(active_only)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "pool_create":
                 pool_name = arguments.get("name", "")
                 if not pool_name:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "name required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "name required"))]
                 result = _try_pool_create(
                     pool_name,
                     arguments.get("description", ""),
                     arguments.get("tags", ""),
                 )
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "pool_delete":
                 pool_id = arguments.get("pool_id", 0)
                 result = _try_pool_delete(int(pool_id))
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "pool_add_stock":
                 pool_id = arguments.get("pool_id", 0)
                 code = arguments.get("code", "")
                 if not code:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "code required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "code required"))]
                 result = _try_pool_add_stock(
                     int(pool_id),
                     code,
                     arguments.get("market", "cn"),
                     arguments.get("reason", ""),
                 )
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "pool_remove_stock":
                 pool_id = arguments.get("pool_id", 0)
                 code = arguments.get("code", "")
                 if not code:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "code required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "code required"))]
                 result = _try_pool_remove_stock(int(pool_id), code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "pool_list_stocks":
                 pool_id = arguments.get("pool_id", 0)
                 result = _try_pool_list_stocks(int(pool_id))
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             # ---- Semantic Search ----
             elif name == "semantic_search":
                 query = arguments.get("query", "")
                 if not query:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "query required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "query required"))]
                 doc_type = arguments.get("doc_type")
                 limit = int(arguments.get("limit", 10))
                 result = _try_semantic_search(query, doc_type, limit)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "vector_index_status":
                 result = _try_vector_status()
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "vector_rebuild_index":
                 doc_type = arguments.get("doc_type")
                 result = _try_rebuild_index(doc_type)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             # ---- History tools ----
             elif name == "history_stats":
                 result = _try_history_stats()
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "history_export":
                 days = int(arguments.get("days", 30))
                 code = arguments.get("code")
                 result = _try_history_export(days=days, code=code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             elif name == "history_prune":
                 older_than_days = int(arguments.get("older_than_days", 0))
                 if older_than_days <= 0:
-                    return [types.TextContent(type="text", text=json.dumps({"error": "older_than_days required"}))]
+                    return [types.TextContent(type="text", text=_mcp_error(ErrorCode.VALIDATION_ERROR, "older_than_days required"))]
                 code = arguments.get("code")
                 result = _try_history_prune(older_than_days, code)
-                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                return [types.TextContent(type="text", text=_wrap_response(result))]
 
             else:
-                return [types.TextContent(type="text", text=json.dumps({"error": f"Unknown tool: {name}"}))]
+                return [types.TextContent(type="text", text=_mcp_error(ErrorCode.NOT_FOUND, f"Unknown tool: {name}"))]
 
         except Exception as e:
-            return [types.TextContent(type="text", text=json.dumps({"error": str(e), "traceback": traceback.format_exc()}))]
+            return [types.TextContent(type="text", text=_mcp_error(ErrorCode.INTERNAL_ERROR, str(e)))]
 
 
     async def run_server() -> None:

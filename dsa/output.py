@@ -4,8 +4,11 @@ from __future__ import annotations
 import json
 import sys
 from functools import update_wrapper
+from typing import Optional
 
 import click
+
+from dsa.errors import ErrorCode, error_dict
 
 
 class JsonOutput:
@@ -21,12 +24,14 @@ class JsonOutput:
             click.echo(json.dumps(out, ensure_ascii=False))
 
     @staticmethod
-    def error(code: str, message: str, retryable: bool = False) -> None:
-        """Print error JSON."""
-        out = {
-            "status": "error",
-            "error": {"code": code, "message": message, "retryable": retryable},
-        }
+    def error(
+        code: ErrorCode | str,
+        message: str,
+        retryable: Optional[bool] = None,
+    ) -> None:
+        """Print error JSON with unified error format."""
+        err = error_dict(code, message, retryable=retryable)
+        out = {"status": "error", "error": err}
         click.echo(json.dumps(out, ensure_ascii=False, indent=2))
         sys.exit(1)
 
