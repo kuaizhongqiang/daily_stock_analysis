@@ -1,30 +1,26 @@
 {
-  "name": "dsa-plugin",
+  "name": "dsa-api-client",
   "version": "0.1.0",
   "type": "module",
-  "description": "OpenClaw Plugin — deep integration with daily_stock_analysis (stock analysis, quotes, pools, semantic search)",
+  "description": "TypeScript client for daily_stock_analysis REST API — typed access to stock analysis, quotes, pools, search, history",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/",
-    "openclaw.plugin.json",
-    "SKILL.md",
     "README.md"
   ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rimraf dist",
-    "dev": "tsc --watch",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [
-    "openclaw",
-    "plugin",
     "stock",
     "finance",
     "analysis",
-    "dsa"
+    "dsa",
+    "api-client"
   ],
   "repository": {
     "type": "git",
@@ -37,7 +33,6 @@
     "@types/node": "^22.0.0"
   },
   "engines": {
-    "openclaw": ">=1.0.0",
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   }
 }

@@ -1,5 +1,8 @@
 # DSA Plugin for OpenClaw
 
+[![npm version](https://img.shields.io/npm/v/dsa-plugin)](https://www.npmjs.com/package/dsa-plugin)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **版本**: 0.1.0 — OpenClaw Plugin 集成，让 OpenClaw 原生调用 DSA 分析引擎。
 
 ## 目录
@@ -10,6 +13,7 @@
 - [配置](#配置)
 - [功能](#功能)
 - [开发](#开发)
+- [发布](#发布)
 - [故障排查](#故障排查)
 
 ---
@@ -69,7 +73,17 @@ OpenClaw CLI/GUI
 
 ## 安装
 
-### 方式一：OpenClaw 内置加载（推荐）
+### 方式一：npm 安装（推荐）
+
+```bash
+npm install dsa-plugin
+# 或
+pnpm add dsa-plugin
+# 或
+yarn add dsa-plugin
+```
+
+### 方式二：OpenClaw 内置加载
 
 ```bash
 # 1. 进入 OpenClaw 项目
@@ -82,7 +96,7 @@ pnpm add ./extensions/dsa-plugin
 pnpm gateway:watch
 ```
 
-### 方式二：本地开发
+### 方式三：本地开发
 
 ```bash
 # 编译插件
@@ -218,3 +232,18 @@ extensions/dsa-plugin/
 | 推送无消息 | 股池为空 | 先创建股池并添加股票 |
 | 审批卡片不弹出 | OpenClaw 版本不支持 | 确认 OpenClaw >= 1.0.0 |
 | 编译错误 | TypeScript 版本不匹配 | `pnpm install` 重新安装 |
+
+---
+
+## 发布
+
+```bash
+# 构建
+pnpm build
+
+# 发布到 npm
+npm publish
+
+# 发布 patch 版本
+npm version patch && npm publish
+```

@@ -19,6 +19,70 @@
 
 ---
 
+## 🏗️ 架构总览
+
+```mermaid
+flowchart TB
+    subgraph 接入层["📡 接入层 (AI Agent 驱动)"]
+        CLI["dsa CLI<br/>(Python Click)"]
+        MCP["dsa MCP Server<br/>(Python)"]
+        Plugin["OpenClaw Plugin<br/>(TypeScript / npm)"]
+        API["REST API<br/>(FastAPI / port 8000)"]
+    end
+
+    subgraph 引擎层["⚙️ 分析引擎"]
+        Pipeline["Pipeline 编排<br/>(src/core/pipeline.py)"]
+        Agent["Agent 系统<br/>(src/agent/)"]
+        Strategies["策略系统<br/>(15+ YAML 策略)"]
+        Technical["技术分析<br/>(K线/指标/资金流)"]
+    end
+
+    subgraph 数据层["💾 数据层"]
+        DataProviders["多源数据抓取<br/>(AkShare/Tushare/YFinance...)"]
+        VectorDB["向量搜索<br/>(LM Studio 嵌入)"]
+        DB["SQLite 持久化<br/>(分析/股池/历史/信号)"]
+    end
+
+    subgraph 外部系统["🔗 外部系统"]
+        LLM["本地/云端 LLM<br/>(LM Studio / OpenAI / ...)"]
+        News["新闻搜索<br/>(SerpAPI/Tavily/Brave)"]
+    end
+
+    CLI -->|HTTP| API
+    MCP -->|HTTP| API
+    Plugin -->|HTTP| API
+    API --> Pipeline
+    Pipeline --> Agent
+    Pipeline --> Technical
+    Pipeline --> DataProviders
+    Agent --> Strategies
+    DataProviders --> DB
+    DataProviders --> News
+    Pipeline --> LLM
+    VectorDB --> LLM
+
+    style CLI fill:#4a9eff,color:#fff
+    style MCP fill:#4a9eff,color:#fff
+    style Plugin fill:#4a9eff,color:#fff
+    style API fill:#4a9eff,color:#fff
+    style Pipeline fill:#f9a825,color:#000
+    style Agent fill:#f9a825,color:#000
+    style Strategies fill:#f9a825,color:#000
+    style DataProviders fill:#66bb6a,color:#fff
+    style VectorDB fill:#66bb6a,color:#fff
+    style DB fill:#66bb6a,color:#fff
+```
+
+### 三款 npm 包
+
+| 包名 | npm | 说明 |
+|------|-----|------|
+| `dsa-plugin` | [![npm](https://img.shields.io/npm/v/dsa-plugin)](https://www.npmjs.com/package/dsa-plugin) | OpenClaw 原生 Plugin，21 个工具 + 会话上下文 + 审批流 + 主动推送 |
+| `dsa-mcp-server` | [![npm](https://img.shields.io/npm/v/dsa-mcp-server)](https://www.npmjs.com/package/dsa-mcp-server) | MCP 协议 Server，Claude/Cursor 可直接调用分析工具 |
+| `dsa-api-client` | [![npm](https://img.shields.io/npm/v/dsa-api-client)](https://www.npmjs.com/package/dsa-api-client) | TypeScript REST API 客户端，零依赖 |
+
+---
+
 ## ✨ 核心能力
 
 | 能力 | 覆盖内容 |

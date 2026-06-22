@@ -1,0 +1,49 @@
+# npm 自动发布 — tag 触发，发布所有 dsa npm 包
+# 当推送 v* tag 时，自动构建并发布 extensions/ 下的三个包
+
+name: npm Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: 📦 npm publish (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - dsa-plugin
+          - dsa-api-client
+          - dsa-mcp-server
+    defaults:
+      run:
+        working-directory: extensions/${{ matrix.package }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v5
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔨 Build
+        run: pnpm build
+
+      - name: 📤 Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
