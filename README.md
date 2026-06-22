@@ -73,13 +73,14 @@ flowchart TB
     style DB fill:#66bb6a,color:#fff
 ```
 
-### 三款 npm 包
+### 发布的包
 
-| 包名 | npm | 说明 |
-|------|-----|------|
-| `dsa-plugin` | [![npm](https://img.shields.io/npm/v/dsa-plugin)](https://www.npmjs.com/package/dsa-plugin) | OpenClaw 原生 Plugin，21 个工具 + 会话上下文 + 审批流 + 主动推送 |
-| `dsa-mcp-server` | [![npm](https://img.shields.io/npm/v/dsa-mcp-server)](https://www.npmjs.com/package/dsa-mcp-server) | MCP 协议 Server，Claude/Cursor 可直接调用分析工具 |
-| `dsa-api-client` | [![npm](https://img.shields.io/npm/v/dsa-api-client)](https://www.npmjs.com/package/dsa-api-client) | TypeScript REST API 客户端，零依赖 |
+| 平台 | 包名 | 安装方式 | 说明 |
+|------|------|---------|------|
+| 🐍 PyPI | `dsa-server` | `pip install dsa-server` | Python 后端（分析引擎 + API + CLI） |
+| 📦 npm | `dsa-plugin` | `npm i dsa-plugin` | OpenClaw 原生 Plugin，21 个工具 |
+| 📦 npm | `dsa-mcp-server` | `npm i dsa-mcp-server` | MCP 协议 Server |
+| 📦 npm | `dsa-api-client` | `npm i dsa-api-client` | TypeScript REST API 客户端 |
 
 ---
 
@@ -107,17 +108,31 @@ flowchart TB
 
 ## 🚀 快速开始
 
+### 方式一：pip 安装（无需克隆）
+
 ```bash
-# 克隆
+# 安装后端
+pip install dsa-server
+
+# 安装全部依赖（数据源 + LLM + API）
+pip install "dsa-server[full]"
+
+# 启动 API 服务
+dsa-server
+
+# 另开终端，分析股票
+dsa analyze 600519
+```
+
+### 方式二：克隆仓库（开发模式）
+
+```bash
 git clone https://github.com/kuaizhongqiang/daily_stock_analysis.git && cd daily_stock_analysis
-
-# 安装依赖
 pip install -r requirements.txt
+pip install -e .
+cp .env.example .env
 
-# 配置环境变量
-cp .env.example .env && vim .env
-
-# 运行分析（JSON 输出）
+# 分析
 python main.py
 ```
 

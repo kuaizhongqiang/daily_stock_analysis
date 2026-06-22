@@ -43,7 +43,8 @@ from api.app import app  # noqa: E402
 __all__ = ['app']
 
 
-if __name__ == "__main__":
+def main_cli():
+    """CLI entry point for `dsa-server` command — start the FastAPI server."""
     import uvicorn
 
     uvicorn.run(
@@ -52,3 +53,7 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
     )
+
+
+if __name__ == "__main__":
+    main_cli()

@@ -1,0 +1,31 @@
+# PyPI 自动发布 — tag 触发，发布 dsa-server 到 PyPI
+
+name: PyPI Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: 🐍 PyPI publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v5
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install build tools
+        run: pip install build twine
+
+      - name: 🔨 Build
+        run: python -m build
+
+      - name: 📤 Publish to PyPI
+        run: twine upload --disable-progress-bar --username __token__ --password "${{ secrets.PYPI_TOKEN }}" dist/*

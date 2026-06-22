@@ -1,16 +1,55 @@
 [project]
-name = "dsa"
+name = "dsa-server"
 version = "0.1.0"
-description = "Stock Intelligent Analysis System — CLI + MCP Server"
+description = "Stock Intelligent Analysis System — CLI + MCP Server + REST API"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["stock", "finance", "analysis", "dsa", "trading"]
+authors = [
+    {name = "kuaizhongqiang"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "click>=8.0",
 ]
 [project.optional-dependencies]
 mcp = ["mcp>=1.0.0"]
+full = [
+    "akshare",
+    "tushare",
+    "baostock",
+    "yfinance",
+    "pytdx",
+    "litellm",
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "pandas",
+    "numpy",
+    "requests",
+    "beautifulsoup4",
+    "lxml",
+    "jieba",
+    "sentencepiece",
+    "openpyxl",
+]
+
+[project.urls]
+Homepage = "https://github.com/kuaizhongqiang/daily_stock_analysis"
+Repository = "https://github.com/kuaizhongqiang/daily_stock_analysis"
 
 [project.scripts]
 dsa = "dsa.cli:main"
+dsa-server = "server:main_cli"
 
 [tool.black]
 line-length = 120
