@@ -1,0 +1,112 @@
+{
+  "$schema": "https://raw.githubusercontent.com/openclaw/openclaw/main/packages/plugin-sdk/schema/plugin.json",
+  "name": "dsa-plugin",
+  "version": "0.1.0",
+  "displayName": "DSA Stock Analysis",
+  "description": "深度集成 daily_stock_analysis 分析引擎 — 行情、分析、股池、语义搜索全链路",
+  "author": "kuaizhongqiang",
+  "license": "MIT",
+  "entry": "./dist/index.js",
+  "engines": {
+    "openclaw": ">=1.0.0"
+  },
+  "categories": ["finance", "data"],
+  "activationEvents": ["onTool:*"],
+  "contributes": {
+    "tools": [
+      {
+        "name": "analyze_stock",
+        "description": "对单只股票执行全量分析（技术面 + 新闻 + LLM），返回分析报告"
+      },
+      {
+        "name": "get_stock_quote",
+        "description": "获取股票实时行情（最新价、涨跌幅、成交量等）"
+      },
+      {
+        "name": "resolve_stock",
+        "description": "解析股票代码/名称，返回标准化代码和基本信息"
+      },
+      {
+        "name": "market_status",
+        "description": "获取大盘行情概要（指数涨跌、领涨板块等）"
+      },
+      {
+        "name": "run_market_review",
+        "description": "执行大盘综合复盘，返回 LLM 分析报告"
+      },
+      {
+        "name": "run_analysis_sync",
+        "description": "同步模式分析指定股票，等待分析完成返回结果"
+      },
+      {
+        "name": "check_job_status",
+        "description": "查询异步分析任务的执行状态"
+      },
+      {
+        "name": "semantic_search",
+        "description": "语义搜索股票相关信息，支持中文自然语言查询"
+      },
+      {
+        "name": "pool_list",
+        "description": "列出所有股池"
+      },
+      {
+        "name": "pool_create",
+        "description": "创建新的股池"
+      },
+      {
+        "name": "pool_add_stock",
+        "description": "向指定股池添加股票"
+      },
+      {
+        "name": "pool_remove_stock",
+        "description": "从指定股池移除股票"
+      },
+      {
+        "name": "pool_delete",
+        "description": "删除整个股池"
+      },
+      {
+        "name": "history_search",
+        "description": "搜索历史分析记录"
+      },
+      {
+        "name": "history_stats",
+        "description": "获取历史分析统计汇总"
+      },
+      {
+        "name": "agent_chat",
+        "description": "Agent 策略问股（支持缠论、均线金叉等高级策略）"
+      }
+    ]
+  },
+  "config": {
+    "properties": {
+      "dsa.baseUrl": {
+        "type": "string",
+        "default": "http://localhost:8000",
+        "description": "DSA API 服务地址"
+      },
+      "dsa.requestTimeout": {
+        "type": "number",
+        "default": 300000,
+        "description": "API 请求超时时间（毫秒），分析请求通常 2-5 分钟"
+      },
+      "dsa.push.pollInterval": {
+        "type": "number",
+        "default": 600000,
+        "description": "主动推送轮询间隔（毫秒），默认 10 分钟"
+      },
+      "dsa.push.stopLossThreshold": {
+        "type": "number",
+        "default": 0.95,
+        "description": "止损阈值，现价/参考价低于此值触发告警"
+      },
+      "dsa.push.takeProfitThreshold": {
+        "type": "number",
+        "default": 1.1,
+        "description": "止盈阈值，现价/参考价高于此值触发告警"
+      }
+    }
+  }
+}

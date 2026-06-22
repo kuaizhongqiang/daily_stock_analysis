@@ -5,7 +5,9 @@ description: "分析股票和市场。通过 dsa MCP 工具调用股票分析、
 
 # 股票分析器
 
-通过 MCP 工具调用 daily_stock_analysis 的核心分析能力。
+通过 MCP 工具或 OpenClaw Plugin 调用 daily_stock_analysis 的核心分析能力。
+
+> **Plugin 模式 (v0.1)**: 若使用 OpenClaw Plugin（`extensions/dsa-plugin/`），直接使用 21 个原生工具，支持会话上下文追问、审批流、主动推送。详见 [`extensions/dsa-plugin/README.md`](extensions/dsa-plugin/README.md)。
 
 ## 可用工具 (MCP)
 
@@ -74,7 +76,42 @@ description: "分析股票和市场。通过 dsa MCP 工具调用股票分析、
 1. 用 `market_status` 查看开市情况
 2. 用 `run_market_review` 运行复盘
 
-## REST API（备选）
+## 远程访问与认证
+
+远程（非本机）调用 REST API 需要配置 API Token 认证。
+
+### 服务端配置
+
+在 `.env` 中设置：
+
+```env
+API_TOKEN=your-secure-token-here
+```
+
+### 客户端调用
+
+所有远程 API 请求必须在请求头中携带 Token：
+
+```bash
+curl -H "Authorization: Bearer your-secure-token-here" \
+  https://your-server.com/api/v1/pools/overview
+```
+
+> 本机 CLI/MCP 调用无需认证，只有远程 HTTP 请求需要 Token。
+
+### 远程股池总览（VSCode 插件用）
+
+```bash
+curl -H "Authorization: Bearer your-token" \
+  https://your-server.com/api/v1/pools/overview
+```
+
+返回嵌套结构：股池 → 股票列表 → 每只股票的实时行情 + 分析摘要 + 策略价位。
+详见 [`docs/remote-data-api.md`](docs/remote-data-api.md)。
+
+---
+
+## REST API
 
 | 端点 | 方法 | 用途 |
 |------|------|------|
@@ -82,6 +119,7 @@ description: "分析股票和市场。通过 dsa MCP 工具调用股票分析、
 | `/api/v1/analysis/status/{task_id}` | GET | 异步任务状态 |
 | `/api/v1/agent/chat` | POST | Agent 策略问股 |
 | `/api/v1/pools` | GET/POST | 股池管理 |
+| `/api/v1/pools/overview` | GET | 远程股池总览（嵌套数据，需认证） |
 | `/api/v1/search/semantic` | GET | 语义搜索 |
 | `/api/v1/history/export` | GET | 导出分析历史 |
 | `/api/health` | GET | 健康检查 |

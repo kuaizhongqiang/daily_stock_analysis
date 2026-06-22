@@ -60,26 +60,3 @@ jobs:
         run: ./scripts/ci_gate.sh deterministic
       - name: ✅ Offline test suite
         run: ./scripts/ci_gate.sh offline-tests
-
-  docker-build:
-    name: docker-build
-    runs-on: ubuntu-latest
-    needs: [backend-gate]
-    steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v5
-      - name: 🐳 Build image
-        run: |
-          docker build -t stock-analysis:test -f docker/Dockerfile .
-          docker run --rm stock-analysis:test python -c "print('✅ Docker OK')"
-      - name: 🔍 Docker smoke imports
-        run: |
-          docker run --rm stock-analysis:test python -c "
-          from src.config import get_config; print('✅ config')
-          from src.storage import DatabaseManager; print('✅ storage')
-          from data_provider import DataFetcherManager; print('✅ data_provider')
-          from src.analyzer import GeminiAnalyzer; print('✅ analyzer')
-          from src.patches.eastmoney_patch import eastmoney_patch; print('✅ patch')
-          from api.app import app; print('✅ api')
-          print('✅ All Docker imports OK')
-          "

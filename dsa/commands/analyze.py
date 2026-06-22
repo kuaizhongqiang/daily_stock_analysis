@@ -18,23 +18,33 @@ def analyze() -> None:
 @click.argument("stock_code")
 @click.option("--strategy", "-s", help="Trading strategy name")
 @click.option("--force", is_flag=True, help="Force re-analysis, ignore cache")
+@click.option("--session", help="Session ID for context-aware analysis")
 @pass_json
-def analyze_stock(json_out: JsonOutput, stock_code: str, strategy: Optional[str], force: bool) -> None:
+def analyze_stock(json_out: JsonOutput, stock_code: str, strategy: Optional[str], force: bool, session: Optional[str]) -> None:
     """Analyze a single stock (sync, waits for result)."""
     from src.core.pipeline import StockAnalysisPipeline
     from src.config import get_config
+
+    # Track session context
+    if session:
+        from src.agent.conversation import conversation_manager
+        sess = conversation_manager.get_or_create(session)
+        sess.update_context("last_stock", stock_code)
 
     config = get_config()
     pipeline = StockAnalysisPipeline(config)
     results = pipeline.run(stock_codes=[stock_code], dry_run=False, send_notification=False)
     if results:
         r = results[0]
-        json_out.ok({
+        result = {
             "stock_code": stock_code,
             "score": getattr(r, "score", None),
             "action": getattr(r, "action", None),
             "summary": getattr(r, "summary", ""),
-        })
+        }
+        if session:
+            result["session_id"] = session
+        json_out.ok(result)
     else:
         json_out.error("ANALYSIS_FAILED", "No analysis result returned")
 
@@ -47,20 +57,29 @@ def submit() -> None:
 @submit.command()
 @click.argument("stock_code")
 @click.option("--strategy", "-s", help="Trading strategy name")
+@click.option("--session", help="Session ID for context-aware analysis")
 @pass_json
-def submit_stock(json_out: JsonOutput, stock_code: str, strategy: Optional[str]) -> None:
+def submit_stock(json_out: JsonOutput, stock_code: str, strategy: Optional[str], session: Optional[str]) -> None:
     """Submit stock analysis asynchronously, returns job_id immediately."""
     from src.services.task_queue import AnalysisTaskQueue
+
+    if session:
+        from src.agent.conversation import conversation_manager
+        sess = conversation_manager.get_or_create(session)
+        sess.update_context("last_stock", stock_code)
 
     queue = AnalysisTaskQueue()
     try:
         task = queue.submit_task(stock_code=stock_code)
-        json_out.ok({
+        result = {
             "job_id": task.task_id,
             "stock_code": task.stock_code,
             "status": task.status,
             "message": "Task submitted. Use `dsa status <job_id>` to check progress.",
-        })
+        }
+        if session:
+            result["session_id"] = session
+        json_out.ok(result)
     except Exception as e:
         json_out.error("SUBMIT_FAILED", str(e))
 

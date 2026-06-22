@@ -1,0 +1,29 @@
+name: risk-check
+description: 风险扫描 — 持仓股异常波动、重大新闻、财报预警
+steps:
+  - name: pool_quotes
+    action: stock.batch_quote
+    description: 池内股票实时行情
+    timeout: 60
+
+  - name: abnormal_scan
+    action: analysis.risk_scan
+    description: 异常波动检测（涨跌幅、成交量异常）
+    depends_on: [pool_quotes]
+    timeout: 120
+
+  - name: news_check
+    action: news.recent
+    description: 相关股票近期新闻
+    timeout: 120
+
+  - name: alert_check
+    action: alert.list_triggered
+    description: 已触发的告警检查
+    timeout: 30
+
+  - name: generate_report
+    action: report.risk_summary
+    description: 风险汇总报告
+    depends_on: [abnormal_scan, news_check, alert_check]
+    timeout: 30

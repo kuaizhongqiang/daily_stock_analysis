@@ -8,7 +8,7 @@
 
 - 遵循现有目录边界：
   - 后端逻辑优先放在 `src/`、`data_provider/`、`api/`
-  - 部署与流水线改动在 `scripts/`、`.github/workflows/`、`docker/`
+  - 部署与流水线改动在 `scripts/`、`.github/workflows/`
 - 未经明确确认，不执行 `git commit`、`git tag`、`git push`。
 - commit message 使用英文，不添加 `Co-Authored-By`。
 - 不写死密钥、账号、路径、模型名、端口或环境差异逻辑。
@@ -140,7 +140,6 @@ gh run view <run_id> --log-failed
 | --- | --- | --- | --- |
 | `ai-governance` | `.github/workflows/ci.yml` | 校验 `AGENTS.md` / `CLAUDE.md` / `.github` 指令 / `.claude/skills` 关系 | 是 |
 | `backend-gate` | `.github/workflows/ci.yml` | 执行 `./scripts/ci_gate.sh` | 是 |
-| `docker-build` | `.github/workflows/ci.yml` | Docker 构建与关键模块导入 smoke | 是 |
 | `network-smoke` | `.github/workflows/network-smoke.yml` | `pytest -m network` + `scripts/test.sh quick` | 否，观测项 |
 | `pr-review` | `.github/workflows/pr-review.yml` | PR 静态检查 + AI 审查 + 自动标签 | 否，辅助项 |
 
@@ -167,11 +166,10 @@ gh run view <run_id> --log-failed
   - 需确认命令、配置项、文件名、工作流名称与实际仓库一致。
   - 改动 AI 协作治理资产时，执行 `python scripts/check_ai_assets.py`。
 
-- 工作流 / 脚本 / Docker 改动：
-  - 适用范围：`.github/**`、`scripts/**`、`docker/**`
+- 工作流 / 脚本改动：
+  - 适用范围：`.github/**`、`scripts/**`
   - 运行最接近改动面的本地验证。
-  - 交付时说明影响了哪条流水线、发布路径或部署路径。
-  - 若未执行 Docker / GitHub Actions 相关验证，明确说明原因与潜在风险。
+  - 交付时说明影响了哪条流水线或发布路径。
 
 - 网络或三方依赖相关改动：
   - 先跑离线或确定性检查。
@@ -181,7 +179,7 @@ gh run view <run_id> --log-failed
 ## 7. 稳定性护栏
 
 - 配置与运行入口：
-  - 修改 `.env` 语义、默认值、CLI 参数、服务启动方式、调度语义时，要同时评估本地运行、Docker、GitHub Actions、API 的影响。
+  - 修改 `.env` 语义、默认值、CLI 参数、服务启动方式、调度语义时，要同时评估本地运行、GitHub Actions、API 的影响。
   - 新配置优先做到“不配置也可运行，配置后增强能力”，避免叠加开关和互斥模式。
 
 - 数据源与 fallback：

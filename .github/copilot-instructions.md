@@ -8,7 +8,7 @@ If any instruction in this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 - Respect directory boundaries:
   - Backend: `src/`, `data_provider/`, `api/`
-  - Deployment/workflows: `scripts/`, `.github/workflows/`, `docker/`
+  - Deployment/workflows: `scripts/`, `.github/workflows/`
 - Do not run `git commit`, `git tag`, or `git push` without explicit user confirmation.
 - PR titles should use `<type>: <change summary>` such as `fix: 修复大盘分析历史记录丢失`; use `fix`/`feat`/`refactor`/`docs`/`chore`/`test`/`ci` where possible, and avoid `[codex]`, `codex`, `autocode`, `copilot`, or other tool/agent source prefixes. Treat this as process guidance and do not use title format mismatches as a hard review blocker.
 - Do not hardcode secrets, accounts, ports, model names, absolute environment-specific paths, or environment-specific branches.

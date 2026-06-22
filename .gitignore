@@ -3,6 +3,9 @@
 .env.*
 *.env
 *.env.local
+
+# MCP 配置（项目级，含 API Key）
+.mcp.json
 .env.*.local
 
 # 测试文件（可能包含敏感配置）

@@ -1,4 +1,33 @@
-# openclaw Skill 集成指南
+# openclaw 集成指南
+
+本文档说明两种将 daily_stock_analysis（DSA）集成到 OpenClaw 的方式。
+
+> **新: Plugin 模式 (v0.1)** — 推荐新用户使用，功能更丰富。
+> 已在旧 Skill 模式基础上增加了会话上下文、审批流、主动推送等能力。
+> 详见 [`extensions/dsa-plugin/README.md`](../extensions/dsa-plugin/README.md)。
+
+---
+
+## 两种模式对比
+
+| 维度 | Plugin 模式（推荐） | Skill 模式（传统） |
+|------|-------------------|-------------------|
+| 集成方式 | 原生 TypeScript Plugin | 通过 HTTP Skill 调用 |
+| 工具数量 | 21 个结构化工具 | 1 个 HTTP 工具 (curl) |
+| 参数校验 | JSON Schema 自动验证 | Skill 内手动解析 |
+| 会话上下文 | 内置，支持追问对比 | 需自行维护 |
+| 审批流 | 原生接入（高危操作需确认） | 无 |
+| 主动推送 | 原生支持（股价预警） | 需外部定时器 |
+| 实现语言 | TypeScript | Markdown 配置 |
+| 安装方式 | `extensions/dsa-plugin/` | `~/.openclaw/skills/dsa/` |
+
+**选择建议**:
+- 新用户 → **Plugin 模式**
+- 不想编译 TypeScript / 仅需基础分析 → **Skill 模式**
+
+---
+
+## Skill 模式集成指南
 
 本文档说明如何通过 [openclaw](https://github.com/openclaw/openclaw) Skill 调用 daily_stock_analysis 的 REST API，实现在 openclaw 对话中触发股票分析的能力。
 
