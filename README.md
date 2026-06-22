@@ -92,6 +92,19 @@ dsa history stats                    # 统计信息
 dsa mcp                            # 启动 MCP Server（11 个工具）
 ```
 
+### 🎯 OpenClaw Plugin（v0.1 新）
+
+通过原生 TypeScript Plugin 深度集成 OpenClaw：
+
+```bash
+# 编译插件
+cd extensions/dsa-plugin && pnpm install && pnpm build
+```
+
+**21 个结构化工具** — 分析、行情、大盘、股池、搜索、历史、策略问股，全部参数 JSON Schema 校验，内置会话上下文追问、审批流（高危操作需确认）、主动推送（股价预警）。
+
+详见 [DSA Plugin 文档](extensions/dsa-plugin/README.md) 和 [Plugin vs Skill 对比](docs/openclaw-skill-integration.md#plugin-模式)。
+
 ---
 
 ## ⚙️ 配置说明

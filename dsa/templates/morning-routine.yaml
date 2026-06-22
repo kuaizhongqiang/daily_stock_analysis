@@ -1,0 +1,30 @@
+name: morning-routine
+description: 盘前例行 — 大盘复盘 → 自选股扫描 → 生成简报
+steps:
+  - name: market_review
+    action: market.review
+    description: 大盘综合复盘
+    timeout: 300
+
+  - name: pool_overview
+    action: pool.list
+    description: 自选股池概览
+    timeout: 30
+
+  - name: pool_stock_quotes
+    action: stock.batch_quote
+    description: 池内股票行情快照
+    depends_on: [pool_overview]
+    timeout: 60
+
+  - name: quick_scan
+    action: analysis.batch_submit
+    description: 池内股票快速扫描
+    depends_on: [pool_stock_quotes]
+    timeout: 600
+
+  - name: generate_briefing
+    action: report.briefing
+    description: 生成盘前简报
+    depends_on: [market_review, quick_scan]
+    timeout: 30

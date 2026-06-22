@@ -24,6 +24,10 @@ import sys
 import click
 
 from .commands import analyze, config, resolve, market, sources, strategies, history, signals, mcp, pool, vector
+from .commands import session as session_cmd
+from .commands import batch as batch_cmd
+from .commands import alert as alert_cmd
+from .commands import routines as routines_cmd
 from .output import JsonOutput, pass_json
 
 
@@ -52,6 +56,11 @@ cli.add_command(signals.signals)
 cli.add_command(mcp.mcp)
 cli.add_command(pool.pool)
 cli.add_command(vector.vector)
+cli.add_command(session_cmd.session)
+cli.add_command(batch_cmd.batch)
+cli.add_command(alert_cmd.alert)
+cli.add_command(routines_cmd.routines)
+cli.add_command(routines_cmd.run)
 
 
 def main():

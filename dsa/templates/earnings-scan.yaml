@@ -1,0 +1,24 @@
+name: earnings-scan
+description: 财报季扫描 — 查询业绩预告、筛选超预期标的
+steps:
+  - name: earnings_calendar
+    action: data.earnings_calendar
+    description: 近期财报日历
+    timeout: 60
+
+  - name: forecast_screening
+    action: analysis.earnings_forecast
+    description: 业绩预告筛选
+    timeout: 120
+
+  - name: surprise_detection
+    action: analysis.surprise_detect
+    description: 超预期/低于预期检测
+    depends_on: [earnings_calendar, forecast_screening]
+    timeout: 180
+
+  - name: generate_report
+    action: report.earnings_summary
+    description: 财报季扫描报告
+    depends_on: [surprise_detection]
+    timeout: 30
