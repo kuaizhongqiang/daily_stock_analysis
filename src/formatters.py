@@ -10,8 +10,6 @@
 import re
 from typing import Callable, List, Optional
 
-import markdown2
-
 TRUNCATION_SUFFIX = "\n\n...(本段内容过长已截断)"
 PAGE_MARKER_PREFIX = f"\n\n📄"
 PAGE_MARKER_SAFE_BYTES = 16 # "\n\n📄 9999/9999"
@@ -102,7 +100,7 @@ def markdown_to_html_document(markdown_text: str) -> str:
     Convert Markdown to a complete HTML document (for email, md2img, etc.).
 
     Uses markdown2 with table and code block support, wraps with inline CSS
-    for compact, readable layout. Reused by notification email and md2img.
+    for compact, readable layout.
 
     Args:
         markdown_text: Raw Markdown content.
@@ -110,6 +108,7 @@ def markdown_to_html_document(markdown_text: str) -> str:
     Returns:
         Full HTML document string with DOCTYPE, head, and body.
     """
+    import markdown2
     html_content = markdown2.markdown(
         markdown_text,
         extras=["tables", "fenced-code-blocks", "break-on-newline", "cuddled-lists"],
