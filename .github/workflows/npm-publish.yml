@@ -43,7 +43,23 @@ jobs:
       - name: 🔨 Build
         run: pnpm build
 
+      - name: ⏭️ Check if version already published
+        id: check_version
+        run: |
+          PUBLISHED_VER=$(npm view ${{ matrix.package }} version 2>/dev/null || echo "none")
+          LOCAL_VER=$(node -p "require('./package.json').version")
+          echo "published=$PUBLISHED_VER"
+          echo "local=$LOCAL_VER"
+          if [ "$PUBLISHED_VER" = "$LOCAL_VER" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️  ${{ matrix.package }}@$LOCAL_VER 已发布，跳过"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "📤  需要发布 ${{ matrix.package }}@$LOCAL_VER"
+          fi
+
       - name: 📤 Publish to npm
+        if: steps.check_version.outputs.skip != 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
