@@ -31,16 +31,40 @@
 """
 
 from .base import BaseFetcher, DataFetcherManager
-from .efinance_fetcher import EfinanceFetcher
-from .akshare_fetcher import AkshareFetcher, is_hk_stock_code
-from .tushare_fetcher import TushareFetcher
-from .pytdx_fetcher import PytdxFetcher
-from .baostock_fetcher import BaostockFetcher
-from .yfinance_fetcher import YfinanceFetcher
-from .longbridge_fetcher import LongbridgeFetcher
-from .finnhub_fetcher import FinnhubFetcher
-from .alphavantage_fetcher import AlphaVantageFetcher
-from .us_index_mapping import is_us_index_code, is_us_stock_code, get_us_index_yf_symbol, US_INDEX_MAPPING
+
+
+# 以下 fetcher 使用懒加载（__getattr__），避免模块级 import 触发深层依赖链。
+# 仅当实际访问对应类名时才执行 import。
+_FETCHER_LAZY_IMPORTS = {
+    "EfinanceFetcher": ".efinance_fetcher",
+    "AkshareFetcher": ".akshare_fetcher",
+    "TushareFetcher": ".tushare_fetcher",
+    "PytdxFetcher": ".pytdx_fetcher",
+    "BaostockFetcher": ".baostock_fetcher",
+    "YfinanceFetcher": ".yfinance_fetcher",
+    "LongbridgeFetcher": ".longbridge_fetcher",
+    "FinnhubFetcher": ".finnhub_fetcher",
+    "AlphaVantageFetcher": ".alphavantage_fetcher",
+    "is_hk_stock_code": ".akshare_fetcher",
+    "is_us_stock_code": ".us_index_mapping",
+    "is_us_index_code": ".us_index_mapping",
+    "get_us_index_yf_symbol": ".us_index_mapping",
+    "US_INDEX_MAPPING": ".us_index_mapping",
+}
+
+
+def __getattr__(name):
+    if name in _FETCHER_LAZY_IMPORTS:
+        import importlib
+        mod = importlib.import_module(_FETCHER_LAZY_IMPORTS[name], __package__)
+        val = getattr(mod, name)
+        globals()[name] = val
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(__all__)
 
 __all__ = [
     'BaseFetcher',
