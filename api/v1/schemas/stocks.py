@@ -92,12 +92,12 @@ class ExtractFromImageResponse(BaseModel):
 
 class StockHistoryResponse(BaseModel):
     """股票历史行情响应"""
-    
+
     stock_code: str = Field(..., description="股票代码")
     stock_name: Optional[str] = Field(None, description="股票名称")
     period: str = Field(..., description="K 线周期")
     data: List[KLineData] = Field(default_factory=list, description="K 线数据列表")
-    
+
     model_config = ConfigDict(json_schema_extra={
         "example": {
             "stock_code": "600519",
@@ -106,3 +106,47 @@ class StockHistoryResponse(BaseModel):
             "data": []
         }
     })
+
+
+class BatchQuoteItem(BaseModel):
+    """批量行情响应项（精简版）"""
+
+    code: str = Field(..., description="股票代码")
+    name: Optional[str] = Field(None, description="股票名称")
+    current_price: Optional[float] = Field(None, description="当前价格")
+    change_pct: Optional[float] = Field(None, description="涨跌幅 (%)")
+    quote_time: Optional[str] = Field(None, description="行情时间")
+
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "code": "600519",
+            "name": "贵州茅台",
+            "current_price": 1800.00,
+            "change_pct": 0.84,
+            "quote_time": "2026-06-22T14:30:00",
+        }
+    })
+
+
+class PoolOverviewStockItem(BaseModel):
+    """股池总览中的单个股票项"""
+
+    code: str = Field(..., description="股票代码")
+    name: Optional[str] = Field(None, description="股票名称")
+    current_price: Optional[float] = Field(None, description="当前价格")
+    change_pct: Optional[float] = Field(None, description="涨跌幅 (%)")
+    quote_time: Optional[str] = Field(None, description="行情时间")
+    analysis_summary: Optional[str] = Field(None, description="分析摘要")
+    action_label: Optional[str] = Field(None, description="建议动作标签")
+    ideal_buy: Optional[float] = Field(None, description="理想买入价")
+    stop_loss: Optional[float] = Field(None, description="止损价")
+    take_profit: Optional[float] = Field(None, description="止盈价")
+
+
+class PoolOverviewPoolItem(BaseModel):
+    """股池总览中的单个股池项"""
+
+    name: str = Field(..., description="股池名称")
+    description: Optional[str] = Field(None, description="股池描述")
+    updated_at: Optional[str] = Field(None, description="更新时间")
+    stocks: List[PoolOverviewStockItem] = Field(default_factory=list, description="股票列表")

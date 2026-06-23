@@ -12,7 +12,7 @@
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List
 import re
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, Depends
@@ -20,6 +20,7 @@ from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, 
 from api.deps import get_system_config_service
 
 from api.v1.schemas.stocks import (
+    BatchQuoteItem,
     ExtractFromImageResponse,
     ExtractItem,
     KLineData,
@@ -402,6 +403,54 @@ def remove_from_watchlist(
             status_code=500,
             detail={"error": "internal_error", "message": f"从自选删除失败: {str(e)}"},
         )
+
+
+@router.get(
+    "/batch",
+    response_model=List[BatchQuoteItem],
+    responses={
+        200: {"description": "批量行情数据"},
+        400: {"description": "参数错误", "model": ErrorResponse},
+    },
+    summary="批量获取股票实时行情（精简版）",
+    description="批量获取多只股票的实时行情（精简字段），专供插件轮询刷新使用。最多 50 只。",
+)
+def get_batch_quotes(
+    codes: str = Query(..., description="股票代码列表，逗号分隔（如 600519,300750,000001）"),
+) -> List[BatchQuoteItem]:
+    """批量获取股票实时行情。"""
+    raw_codes = [c.strip() for c in codes.split(",") if c.strip()]
+    if not raw_codes:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "bad_request", "message": "股票代码列表不能为空"},
+        )
+    if len(raw_codes) > 50:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "too_many_codes", "message": "一次性最多查询 50 只股票"},
+        )
+
+    service = StockService()
+    results: List[BatchQuoteItem] = []
+    for code in raw_codes:
+        try:
+            quote = service.get_realtime_quote(code)
+            if quote is None:
+                results.append(BatchQuoteItem(code=code, name=None, current_price=None, change_pct=None, quote_time=None))
+            else:
+                results.append(BatchQuoteItem(
+                    code=quote.get("stock_code", code),
+                    name=quote.get("stock_name"),
+                    current_price=quote.get("current_price"),
+                    change_pct=quote.get("change_percent"),
+                    quote_time=quote.get("update_time"),
+                ))
+        except Exception as e:
+            logger.warning("获取 %s 行情失败: %s", code, e)
+            results.append(BatchQuoteItem(code=code, name=None, current_price=None, change_pct=None, quote_time=None))
+
+    return results
 
 
 @router.get(

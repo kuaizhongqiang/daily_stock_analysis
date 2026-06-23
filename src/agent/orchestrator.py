@@ -1597,7 +1597,7 @@ def _truncate_text(text: Any, limit: int) -> str:
     value = str(text or "").strip()
     if len(value) <= limit:
         return value
-    return value[: max(0, limit - 1)].rstrip() + "…"
+    return value[: max(0, limit - 1)].rstrip() + "..."
 
 
 def _extract_latest_news_title(intelligence: Dict[str, Any]) -> str:

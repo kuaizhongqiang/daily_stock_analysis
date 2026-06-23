@@ -1,6 +1,10 @@
 MIT License
 
-Copyright (c) 2026 ZhuLinsen
+Copyright (c) 2026 ZhuLinsen (original author)
+Copyright (c) 2026 kuaizhongqiang (fork maintainer)
+
+This software is a fork of daily_stock_analysis by ZhuLinsen.
+Modifications and additional features are Copyright (c) 2026 kuaizhongqiang.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

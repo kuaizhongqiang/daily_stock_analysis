@@ -7,7 +7,7 @@
 > 本 Fork 的核心变更：
 >
 > - 🧹 **彻底剥离平台层** — 已移除 Web UI、桌面端、Bot 渠道、通知推送、定时任务（第一阶段）
-> - 🤖 **AI Agent 驱动** — 由 AI Agent 通过 CLI / MCP / OpenClaw Skill 调用，无自主行为
+> - 🤖 **AI Agent 驱动** — 由 AI Agent 通过 CLI / REST API 调用，无自主行为
 > - 💻 **本地 LLM 优先** — 默认使用 LM Studio，无需云 API Key
 > - 🔌 **保留核心分析引擎** — 多市场数据聚合、AI 决策分析、15+ 策略系统
 > - 🏊 **股池 + 向量搜索 + 历史留存** — 轻量级股池管理、语义搜索、会话追踪（第二阶段）
@@ -25,9 +25,8 @@
 flowchart TB
     subgraph 接入层["📡 接入层 (AI Agent 驱动)"]
         CLI["dsa CLI<br/>(Python Click)"]
-        MCP["dsa MCP Server<br/>(Python)"]
+        API["dsa serve — REST API<br/>(FastAPI / port 8000)"]
         Plugin["OpenClaw Plugin<br/>(TypeScript / npm)"]
-        API["REST API<br/>(FastAPI / port 8000)"]
     end
 
     subgraph 引擎层["⚙️ 分析引擎"]
@@ -49,7 +48,6 @@ flowchart TB
     end
 
     CLI -->|HTTP| API
-    MCP -->|HTTP| API
     Plugin -->|HTTP| API
     API --> Pipeline
     Pipeline --> Agent
@@ -62,7 +60,6 @@ flowchart TB
     VectorDB --> LLM
 
     style CLI fill:#4a9eff,color:#fff
-    style MCP fill:#4a9eff,color:#fff
     style Plugin fill:#4a9eff,color:#fff
     style API fill:#4a9eff,color:#fff
     style Pipeline fill:#f9a825,color:#000
@@ -77,9 +74,8 @@ flowchart TB
 
 | 平台 | 包名 | 安装方式 | 说明 |
 |------|------|---------|------|
-| 🐍 PyPI | `dsa-server` | `pip install dsa-server` | Python 后端（分析引擎 + API + CLI） |
+| 🐍 PyPI | `dsa-server` | `pip install dsa-server` | Python 后端（分析引擎 + CLI + API） |
 | 📦 npm | `dsa-plugin` | `npm i dsa-plugin` | OpenClaw 原生 Plugin，21 个工具 |
-| 📦 npm | `dsa-mcp-server` | `npm i dsa-mcp-server` | MCP 协议 Server |
 | 📦 npm | `dsa-api-client` | `npm i dsa-api-client` | TypeScript REST API 客户端 |
 
 ---
@@ -118,7 +114,7 @@ pip install dsa-server
 pip install "dsa-server[full]"
 
 # 启动 API 服务
-dsa-server
+dsa serve
 
 # 另开终端，分析股票
 dsa analyze 600519
@@ -167,8 +163,8 @@ dsa history search 茅台              # 全文搜索历史
 dsa history export --format json     # 导出历史
 dsa history stats                    # 统计信息
 
-# MCP Server
-dsa mcp                            # 启动 MCP Server（11 个工具）
+# REST API 服务
+dsa serve                          # 启动 API 服务（FastAPI / port 8000）
 ```
 
 ### 🎯 OpenClaw Plugin（v0.1 新）

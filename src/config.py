@@ -586,12 +586,18 @@ def setup_env(override: bool = False):
                   system environment variables take precedence.
     """
     Config._capture_bootstrap_runtime_env_overrides()
-    # src/config.py -> src/ -> root
+    # 查找 .env 文件：ENV_FILE 环境变量 > CWD > src 相对路径
+    # CWD 优先可使 pip 安装版（site-packages/src/config.py）避免
+    # 错误地解析到 site-packages/.env（Issue #67）
     env_file = os.getenv("ENV_FILE")
     if env_file:
         env_path = Path(env_file)
     else:
-        env_path = Path(__file__).parent.parent / '.env'
+        cwd_env = Path.cwd() / '.env'
+        if cwd_env.exists():
+            env_path = cwd_env
+        else:
+            env_path = Path(__file__).parent.parent / '.env'
     load_dotenv(dotenv_path=env_path, override=override)
 
 
@@ -1134,18 +1140,22 @@ class Config:
         if not anthropic_api_keys and _single_anthropic:
             anthropic_api_keys = [_single_anthropic]
 
-        # OPENAI_API_KEYS > AIHUBMIX_KEY > OPENAI_API_KEY
+        # OPENAI_API_KEYS > AIHUBMIX_KEY > OPENAI_API_KEY > LLM_LM_STUDIO_API_KEY
         _aihubmix = os.getenv('AIHUBMIX_KEY', '').strip()
         _openai_keys_raw = os.getenv('OPENAI_API_KEYS', '')
         openai_api_keys = [k.strip() for k in _openai_keys_raw.split(',') if k.strip()]
         if not openai_api_keys:
             _single_openai = os.getenv('OPENAI_API_KEY', '').strip()
             _fallback_key = _aihubmix or _single_openai
+            if not _fallback_key:
+                _fallback_key = os.getenv('LLM_LM_STUDIO_API_KEY', '').strip()
             if _fallback_key:
                 openai_api_keys = [_fallback_key]
         openai_base_url = os.getenv('OPENAI_BASE_URL') or (
             'https://aihubmix.com/v1' if _aihubmix else None
         )
+        if not openai_base_url:
+            openai_base_url = os.getenv('LLM_LM_STUDIO_BASE_URL', '').strip() or None
 
         # DEEPSEEK_API_KEYS > DEEPSEEK_API_KEY (independent from OpenAI-compatible layer)
         _deepseek_keys_raw = os.getenv('DEEPSEEK_API_KEYS', '')

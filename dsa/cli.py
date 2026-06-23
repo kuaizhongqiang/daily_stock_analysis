@@ -14,7 +14,13 @@ Usage:
     dsa strategies               List/show strategies
     dsa history                  Query analysis history
     dsa signals                  Query decision signals
-    dsa mcp                      Start MCP Server
+    dsa serve                    Start REST API server (FastAPI)
+    dsa pool                     Stock pool management
+    dsa vector                   Vector search
+    dsa batch                    Batch operations
+    dsa session                  Session management
+    dsa alert                    Alert management
+    dsa routines                 Routine tasks
 """
 from __future__ import annotations
 
@@ -23,7 +29,7 @@ import sys
 
 import click
 
-from .commands import analyze, config, resolve, market, sources, strategies, history, signals, mcp, pool, vector
+from .commands import analyze, config, resolve, market, sources, strategies, history, signals, serve, pool, vector
 from .commands import session as session_cmd
 from .commands import batch as batch_cmd
 from .commands import alert as alert_cmd
@@ -53,7 +59,7 @@ cli.add_command(sources.sources)
 cli.add_command(strategies.strategies)
 cli.add_command(history.history)
 cli.add_command(signals.signals)
-cli.add_command(mcp.mcp)
+cli.add_command(serve.serve)
 cli.add_command(pool.pool)
 cli.add_command(vector.vector)
 cli.add_command(session_cmd.session)

@@ -1,0 +1,3 @@
+recursive-include strategies *.yaml *.md
+recursive-include dsa/templates *.yaml
+include dsa/SKILL.md

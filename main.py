@@ -545,11 +545,11 @@ def run_full_analysis(
         )
 
         # 1. 运行个股分析
+        # NOTE: send_notification 和 merge_notification 参数已移除，
+        # 通知推送功能已由 AI Agent 接管
         results = pipeline.run(
             stock_codes=stock_codes,
             dry_run=args.dry_run,
-            send_notification=not args.no_notify,
-            merge_notification=merge_notification
         )
 
         # Issue #128: 分析间隔 - 在个股分析和大盘分析之间添加延迟

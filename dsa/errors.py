@@ -1,11 +1,11 @@
 """
-统一错误码定义 — CLI / MCP / REST API 三层共享。
+统一错误码定义 — CLI / REST API 共享。
 
 确保 Agent 通过任意接口层调用时，都能以一致的格式处理错误。
 
 ## 错误响应格式
 
-### CLI / MCP
+### CLI
 ```json
 {
   "status": "error",

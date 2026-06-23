@@ -3598,6 +3598,15 @@ class GeminiAnalyzer:
                 if explicit_action is None and isinstance(dashboard, dict):
                     explicit_action = dashboard.get("action")
 
+                # Normalize hot_topics: convert list/dict to string
+                raw_hot_topics = data.get('hot_topics', '')
+                if isinstance(raw_hot_topics, list):
+                    hot_topics_value = '、'.join(str(t) for t in raw_hot_topics if t)
+                elif isinstance(raw_hot_topics, dict):
+                    hot_topics_value = str(raw_hot_topics)
+                else:
+                    hot_topics_value = raw_hot_topics
+
                 result = AnalysisResult(
                     code=code,
                     name=name,
@@ -3629,7 +3638,7 @@ class GeminiAnalyzer:
                     # 情绪面/消息面
                     news_summary=data.get('news_summary', ''),
                     market_sentiment=data.get('market_sentiment', ''),
-                    hot_topics=data.get('hot_topics', ''),
+                    hot_topics=hot_topics_value,
                     # 综合
                     analysis_summary=data.get('analysis_summary', 'Analysis completed' if report_language == "en" else '分析完成'),
                     key_points=data.get('key_points', ''),

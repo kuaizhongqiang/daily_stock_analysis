@@ -33,14 +33,18 @@ def analyze_stock(json_out: JsonOutput, stock_code: str, strategy: Optional[str]
 
     config = get_config()
     pipeline = StockAnalysisPipeline(config)
-    results = pipeline.run(stock_codes=[stock_code], dry_run=False, send_notification=False)
+    results = pipeline.run(stock_codes=[stock_code], dry_run=False)
     if results:
         r = results[0]
         result = {
             "stock_code": stock_code,
-            "score": getattr(r, "score", None),
+            "score": getattr(r, "sentiment_score", None),
             "action": getattr(r, "action", None),
-            "summary": getattr(r, "summary", ""),
+            "decision_type": getattr(r, "decision_type", None),
+            "confidence_level": getattr(r, "confidence_level", None),
+            "trend_prediction": getattr(r, "trend_prediction", None),
+            "operation_advice": getattr(r, "operation_advice", None),
+            "summary": getattr(r, "analysis_summary", ""),
         }
         if session:
             result["session_id"] = session

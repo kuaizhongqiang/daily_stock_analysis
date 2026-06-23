@@ -11,7 +11,7 @@ Uses Optional for lenient parsing; business-layer integrity checks are separate.
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class PositionAdvice(BaseModel):
@@ -170,6 +170,16 @@ class AnalysisReportSchema(BaseModel):
     news_summary: Optional[str] = None
     market_sentiment: Optional[str] = None
     hot_topics: Optional[str] = None
+
+    @field_validator('hot_topics', mode='before')
+    @classmethod
+    def normalize_hot_topics(cls, v):
+        """Normalize hot_topics: convert list to comma-separated string."""
+        if isinstance(v, list):
+            return '、'.join(str(item) for item in v if item)
+        if isinstance(v, dict):
+            return str(v)
+        return v
 
     search_performed: Optional[bool] = None
     data_sources: Optional[str] = None

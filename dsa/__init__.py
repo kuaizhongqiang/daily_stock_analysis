@@ -1,3 +1,3 @@
-"""dsa — Stock Intelligent Analysis System CLI + MCP Server."""
+"""dsa — Stock Intelligent Analysis System CLI + REST API."""
 
 __version__ = "0.1.0"

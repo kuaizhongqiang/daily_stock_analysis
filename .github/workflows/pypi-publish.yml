@@ -1,4 +1,4 @@
-# PyPI 自动发布 — tag 触发，发布 dsa-server 到 PyPI
+# PyPI Publish — tag 触发，发布 dsa-server 到 PyPI 并创建 GitHub Release
 
 name: PyPI Publish
 
@@ -11,6 +11,8 @@ jobs:
   publish:
     name: 🐍 PyPI publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 用于创建 Release
 
     steps:
       - name: 📥 Checkout
@@ -24,8 +26,21 @@ jobs:
       - name: 📦 Install build tools
         run: pip install build twine
 
-      - name: 🔨 Build
+      - name: 🔨 Build wheel + sdist
         run: python -m build
 
       - name: 📤 Publish to PyPI
-        run: twine upload --disable-progress-bar --username __token__ --password "${{ secrets.PYPI_TOKEN }}" dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: twine upload --disable-progress-bar dist/*
+
+      - name: 🏷️ Create GitHub Release
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --notes "See [CHANGELOG](https://github.com/kuaizhongqiang/daily_stock_analysis/blob/${TAG}/docs/CHANGELOG.md) for details." \
+            --target main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

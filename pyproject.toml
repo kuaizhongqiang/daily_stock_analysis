@@ -1,6 +1,6 @@
 [project]
 name = "dsa-server"
-version = "0.1.2"
+version = "0.1.7"
 description = "Stock Intelligent Analysis System — CLI + MCP Server + REST API"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,11 +48,12 @@ Homepage = "https://github.com/kuaizhongqiang/daily_stock_analysis"
 Repository = "https://github.com/kuaizhongqiang/daily_stock_analysis"
 
 [tool.setuptools.packages.find]
-include = ["dsa*", "src*", "data_provider*", "api*"]
+include = ["dsa*", "src*", "data_provider*", "api*", "strategies*"]
 exclude = ["tests*", "extensions*"]
 
 [tool.setuptools]
 py-modules = ["server"]
+include-package-data = true
 
 [tool.setuptools.package-data]
 dsa = ["templates/*.yaml", "SKILL.md"]
@@ -60,7 +61,6 @@ src = ["py.typed"]
 
 [project.scripts]
 dsa = "dsa.cli:main"
-dsa-server = "server:main_cli"
 
 [tool.black]
 line-length = 120

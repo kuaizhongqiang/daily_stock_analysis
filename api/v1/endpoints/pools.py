@@ -7,14 +7,18 @@
 职责：
 1. 股池 CRUD
 2. 股池成员管理
+3. 股池总览（含行情+分析摘要）
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter
 
+from api.v1.schemas.stocks import PoolOverviewStockItem, PoolOverviewPoolItem
+from src.repositories.analysis_repo import AnalysisRepository
 from src.services.stock_pool_service import StockPoolService
+from src.services.stock_service import StockService
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +27,84 @@ router = APIRouter()
 
 def _get_pool_service() -> StockPoolService:
     return StockPoolService()
+
+
+@router.get("/overview", response_model=List[PoolOverviewPoolItem])
+async def pool_overview():
+    """股池总览：返回所有活跃股池及其包含的股票实时行情和分析摘要。"""
+    pool_service = _get_pool_service()
+    stock_service = StockService()
+    analysis_repo = AnalysisRepository()
+
+    pools = pool_service.list_pools(active_only=True)
+    result: List[PoolOverviewPoolItem] = []
+
+    for pool in pools:
+        pool_id = pool["id"]
+        members = pool_service.list_stocks(pool_id)
+        stock_items: List[PoolOverviewStockItem] = []
+
+        for m in members:
+            code = m["code"]
+            # 获取实时行情
+            quote = None
+            try:
+                quote = stock_service.get_realtime_quote(code)
+            except Exception as e:
+                logger.warning("获取 %s 行情失败: %s", code, e)
+
+            # 获取最新分析摘要
+            summary = None
+            action_label = None
+            ideal_buy = None
+            stop_loss = None
+            take_profit = None
+            try:
+                records = analysis_repo.get_list(code=code, days=30, limit=1)
+                if records:
+                    record = records[0]
+                    summary = getattr(record, "analysis_summary", None)
+
+                    # 从 raw_result JSON 中提取 action_label
+                    raw = getattr(record, "raw_result", None)
+                    if isinstance(raw, dict):
+                        action_label = raw.get("action_label") or raw.get("action")
+                    elif isinstance(raw, str):
+                        import json
+                        try:
+                            raw_dict = json.loads(raw)
+                            action_label = raw_dict.get("action_label") or raw_dict.get("action")
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+
+                    ideal_buy = getattr(record, "ideal_buy", None)
+                    stop_loss = getattr(record, "stop_loss", None)
+                    take_profit = getattr(record, "take_profit", None)
+            except Exception as e:
+                logger.warning("获取 %s 分析摘要失败: %s", code, e)
+
+            quote_time = quote.get("update_time") if quote else None
+            stock_items.append(PoolOverviewStockItem(
+                code=code,
+                name=m.get("name"),
+                current_price=quote.get("current_price") if quote else None,
+                change_pct=quote.get("change_percent") if quote else None,
+                quote_time=quote_time,
+                analysis_summary=summary,
+                action_label=action_label,
+                ideal_buy=ideal_buy,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+            ))
+
+        result.append(PoolOverviewPoolItem(
+            name=pool["name"],
+            description=pool.get("description"),
+            updated_at=pool.get("updated_at"),
+            stocks=stock_items,
+        ))
+
+    return result
 
 
 @router.get("")
