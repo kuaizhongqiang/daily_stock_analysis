@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [修复] #69 hot_topics schema 校验警告：LLM 返回列表时 Pydantic 校验失败，新增 field_validator 自动转换 list/dict 为字符串，同时 analyzer.py 添加兜底处理
 - [新功能] #70 新增 `GET /api/v1/pools/overview` 股池总览接口（含行情+分析摘要+策略价位嵌套结构）
 - [新功能] #70 新增 `GET /api/v1/stocks/batch` 批量精简行情接口（供插件轮询刷新）
+- [修复] #71 `GET /api/v1/stocks/{code}/quote` 在所有股票返回 not_found：外部实时数据源不可用时新增数据库 `stock_daily` 最新日线降级兜底，下游 personal-helper-server 数据聚合不再为空
 - [重构] 剥离 MCP Server 代码（`dsa/commands/mcp.py` + `dsa/mcp_server.py`），`dsa-server` 包统一为 CLI + API，入口：`dsa`（CLI）和 `dsa serve`（API）
 - [重构] 删除 `dsa-server` 独立入口点，`server:main_cli` 整合为 `dsa serve` 子命令
 
